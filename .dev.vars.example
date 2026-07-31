@@ -1,0 +1,54 @@
+# Copy to .dev.vars for local development (.dev.vars is gitignored).
+# In production set these under
+#   Workers & Pages -> visionguard -> Settings -> Variables and Secrets
+# as ENCRYPTED secrets, not plaintext variables.
+
+# ---------------------------------------------------------------------------
+# REQUIRED. Signs session cookies and peppers password hashes.
+# 32+ random characters. Generate one:
+#   node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+#
+# Changing it signs everyone out AND invalidates every stored password hash,
+# so existing users would have to reset. Set it once and leave it alone.
+# ---------------------------------------------------------------------------
+SESSION_SECRET=""
+
+# Raise on the Workers PAID plan; the 25,000 default exists to stay inside the
+# Free plan's 10 ms CPU budget. Existing hashes keep working either way.
+# PBKDF2_ITERATIONS="210000"
+
+# ---------------------------------------------------------------------------
+# WhatsApp order notifications - ALL OPTIONAL.
+#
+# With none of this set, orders are still saved and the customer still gets a
+# one-tap "send this order on WhatsApp" link on the confirmation screen. These
+# variables only add the automatic push to your phone.
+#
+# Pick ONE provider. See lib/whatsapp.js for the trade-offs.
+# ---------------------------------------------------------------------------
+
+# Where the notification goes. Defaults to the number published on the site.
+WHATSAPP_TO="201105006854"
+
+# -- Option 1: Meta WhatsApp Cloud API (official, free tier) -----------------
+# WHATSAPP_TOKEN=""            # permanent access token from a System User
+# WHATSAPP_PHONE_ID=""         # Phone number ID, NOT the phone number
+# WHATSAPP_TEMPLATE=""         # approved template name with a single {{1}} body param
+# WHATSAPP_TEMPLATE_LANG="ar"
+# WHATSAPP_ALLOW_TEXT="1"      # send plain text instead of a template (only valid
+#                              # inside a 24h window - see lib/whatsapp.js)
+
+# -- Option 2: UltraMsg (unofficial bridge, no template approval) ------------
+# ULTRAMSG_INSTANCE=""         # e.g. instance12345
+# ULTRAMSG_TOKEN=""
+
+# -- Option 3: Twilio WhatsApp ----------------------------------------------
+# TWILIO_SID=""
+# TWILIO_TOKEN=""
+# TWILIO_FROM="14155238886"    # your Twilio WhatsApp sender, digits only
+
+# -- Option 4: CallMeBot (free, one recipient, plain text) -------------------
+# CALLMEBOT_KEY=""
+
+# Force a provider instead of auto-detecting from whichever keys are present.
+# WHATSAPP_PROVIDER="meta"

@@ -1,0 +1,45 @@
+# Cloudflare Pages - project config
+#
+# public/ is shipped verbatim; functions/ is compiled into Pages Functions and
+# served under /api/*. Keeping the site in a subdirectory is deliberate - it
+# stops README.md, this file and node_modules from being served at the site
+# root, and it keeps lib/ (server-only code) off the public web.
+#
+# IMPORTANT: `name` must match your Cloudflare Pages project name exactly.
+# `wrangler pages deploy` reads it from here, and a mismatch fails the build
+# with "project not found". Check it in the dashboard under
+# Workers & Pages -> your project -> the name shown at the top.
+# If your project is named something else, either rename it here or pass
+# --project-name=<actual-name> on the deploy command.
+
+name = "visionguard"
+pages_build_output_dir = "public"
+
+compatibility_date = "2026-07-31"
+
+# --------------------------------------------------------------------------
+# Database - orders, accounts, attendance, mailing list.
+#
+# Apply the schema to it once (lib/db.js also self-heals a fresh database on
+# first request, so this is belt and braces):
+#   npx wrangler d1 execute visionguardegdata --remote --file=./schema.sql
+#
+# `wrangler pages dev` ignores database_id and uses a local SQLite file under
+# .wrangler/, so local development never touches production data.
+# --------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "visionguardegdata"
+database_id = "b538d110-35d6-43bd-b821-233c26e173bd"
+
+# --------------------------------------------------------------------------
+# Non-secret settings. Secrets (SESSION_SECRET, WhatsApp credentials) do NOT
+# belong here - put them in .dev.vars locally and in the Pages dashboard for
+# production. See .dev.vars.example.
+# --------------------------------------------------------------------------
+[vars]
+# Contracted working day, in hours. Drives the attendance targets.
+WORK_DAY_HOURS = "6"
+# Flat shipping fee in EGP. 0 means "quoted per governorate at confirmation",
+# which is what the store actually does today.
+SHIPPING_FLAT = "0"

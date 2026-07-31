@@ -1,0 +1,20 @@
+{
+  "name": "visionguard-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vision Guard — bilingual AR/EN site, on-site shop and staff attendance. Static front end, Cloudflare Pages Functions + D1 behind it. No build step.",
+  "scripts": {
+    "dev": "wrangler pages dev --port 5173",
+    "deploy": "wrangler pages deploy",
+    "deploy:preview": "wrangler pages deploy --branch=preview",
+    "db:init": "wrangler d1 execute visionguardegdata --remote --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute visionguardegdata --local --file=./schema.sql",
+    "db:orders": "wrangler d1 execute visionguardegdata --remote --command \"SELECT id, created_at, name, phone, governorate, total, status, notified, notify_error FROM orders ORDER BY created_at DESC LIMIT 20\"",
+    "db:order": "wrangler d1 execute visionguardegdata --remote --command \"SELECT * FROM orders ORDER BY created_at DESC LIMIT 1\"",
+    "db:attendance": "wrangler d1 execute visionguardegdata --remote --command \"SELECT u.name, a.work_date, a.clock_in, a.clock_out, a.seconds FROM attendance a JOIN users u ON u.id = a.user_id ORDER BY a.clock_in DESC LIMIT 50\"",
+    "db:newsletter": "wrangler d1 execute visionguardegdata --remote --command \"SELECT email, name, marketing, source, created_at, unsub_at FROM newsletter ORDER BY created_at DESC\""
+  },
+  "devDependencies": {
+    "wrangler": "^4.116.0"
+  }
+}

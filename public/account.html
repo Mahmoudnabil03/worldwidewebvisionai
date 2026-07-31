@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>حسابي | Vision Guard</title>
+<meta name="description" content="سجّل الدخول أو أنشئ حساب Vision Guard لمتابعة طلباتك وتفضيلاتك.">
+<meta name="theme-color" content="#08090B">
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="icon" href="assets/logo-trim.png">
+<link rel="apple-touch-icon" href="assets/logo-trim.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="app.css">
+
+<script>(function(d){var c=d.documentElement;c.className=c.className.replace('no-js','js');try{var t=localStorage.getItem('vg-theme');if(t==='light'||t==='dark'){c.setAttribute('data-theme',t);}}catch(e){}})(document);</script>
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <div class="nav__inner shell">
+    <a class="brand" href="index.html" aria-label="Vision Guard">
+      <img class="brand__logo" src="assets/logo-dark.png" alt="Vision Guard" width="322" height="190">
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      <a href="index.html" data-en="Home">الرئيسية</a>
+      <a href="shop.html" data-en="Shop">المتجر</a>
+      <a href="account.html" class="is-active" aria-current="page" data-en="Account">حسابي</a>
+      <a href="index.html#contact" data-en="Contact">تواصل</a>
+    </nav>
+
+    <div class="nav__end">
+      <button class="lang" id="lang" type="button" aria-label="Switch language">EN</button>
+      <button class="theme" id="theme" type="button" aria-label="Switch theme" aria-pressed="false" title="الوضع الفاتح / الداكن">
+        <svg class="theme__sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/>
+        </svg>
+        <svg class="theme__moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.2 14.6A8.4 8.4 0 0 1 9.4 3.8a8.4 8.4 0 1 0 10.8 10.8Z"/>
+        </svg>
+      </button>
+      <a class="iconbtn" href="shop.html" aria-label="Shop" title="المتجر">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <path d="M3.5 4h2.2l2 11.2a1.6 1.6 0 0 0 1.6 1.3h8.1a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.4"/>
+          <circle cx="10" cy="20" r="1.2" fill="currentColor" stroke="none"/>
+          <circle cx="17.5" cy="20" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </a>
+      <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
+        <span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="menu" id="menu" hidden>
+  <div class="menu__inner">
+    <a href="index.html"><i>01</i><span data-en="Home">الرئيسية</span></a>
+    <a href="shop.html"><i>02</i><span data-en="Shop">المتجر</span></a>
+    <a href="account.html"><i>03</i><span data-en="Account">حسابي</span></a>
+    <a href="index.html#contact"><i>04</i><span data-en="Contact">تواصل</span></a>
+    <div class="menu__foot">
+      <a href="tel:+201260087815" dir="ltr">01260087815</a>
+      <a href="https://wa.me/201105006854" target="_blank" rel="noopener" dir="ltr">WhatsApp 01105006854</a>
+    </div>
+  </div>
+</div>
+
+<main id="top">
+
+  <!-- ============ SIGNED OUT ============ -->
+  <section class="view auth" id="viewAuth" hidden>
+    <div class="shell">
+      <header class="pagehead" style="padding-block:0 26px">
+        <p class="eyebrow"><span class="dot"></span><span data-en="Account">حسابي</span></p>
+        <h1 class="h2" data-en="Sign in, or start an account.">سجّل دخولك، أو اعمل حساب.</h1>
+      </header>
+
+      <div class="auth__card">
+        <div class="auth__tabs" role="tablist">
+          <button class="auth__tab is-on" id="tabLogin" type="button" role="tab" aria-selected="true" aria-controls="paneLogin" data-en="Sign in">تسجيل الدخول</button>
+          <button class="auth__tab" id="tabSignup" type="button" role="tab" aria-selected="false" aria-controls="paneSignup" data-en="Create account">حساب جديد</button>
+        </div>
+
+        <div class="auth__body">
+
+          <!-- ---- LOGIN ---- -->
+          <div id="paneLogin" role="tabpanel" aria-labelledby="tabLogin">
+            <p class="auth__intro" data-en="Sign in to follow your orders. Vision Guard staff: use your company address to reach the attendance tab.">
+              سجّل دخولك عشان تتابع طلباتك. لموظفي Vision Guard: استخدم إيميل الشركة عشان يظهر لك تبويب الحضور.
+            </p>
+            <form id="loginForm" novalidate>
+              <div class="field">
+                <label for="lEmail" data-en="Email">الإيميل</label>
+                <input id="lEmail" type="email" required autocomplete="email" dir="ltr" maxlength="254">
+              </div>
+              <div class="field">
+                <label for="lPass" data-en="Password">كلمة السر</label>
+                <input id="lPass" type="password" required autocomplete="current-password" dir="ltr" maxlength="200">
+              </div>
+              <div class="staffhint" id="loginStaffHint" hidden>
+                <span class="dot"></span>
+                <span data-en="Staff address — the attendance tab will appear after you sign in.">إيميل موظف — تبويب الحضور هيظهر بعد تسجيل الدخول.</span>
+              </div>
+              <p class="formerr" id="loginErr" role="alert" hidden></p>
+              <button class="btn btn--wide" id="loginBtn" type="submit"><span data-en="Sign in">تسجيل الدخول</span></button>
+            </form>
+            <p class="auth__alt">
+              <span data-en="No account yet?">لسه ماعندكش حساب؟</span>
+              <button type="button" data-goto="signup" data-en="Create one">اعمل حساب</button>
+            </p>
+          </div>
+
+          <!-- ---- SIGNUP ---- -->
+          <div id="paneSignup" role="tabpanel" aria-labelledby="tabSignup" hidden>
+            <p class="auth__intro" data-en="One account for your orders and your preferences. We ask for a mobile number because that is how we confirm deliveries.">
+              حساب واحد لطلباتك وتفضيلاتك. بنطلب رقم الموبايل لأنه الطريقة اللي بنأكد بيها التوصيل.
+            </p>
+            <form id="signupForm" novalidate>
+              <div class="field">
+                <label for="sName" data-en="Full name">الاسم بالكامل</label>
+                <input id="sName" required autocomplete="name" maxlength="120">
+              </div>
+              <div class="field">
+                <label for="sEmail" data-en="Email">الإيميل</label>
+                <input id="sEmail" type="email" required autocomplete="email" dir="ltr" maxlength="254">
+              </div>
+              <div class="staffhint" id="signupStaffHint" hidden>
+                <span class="dot"></span>
+                <span data-en="Vision Guard staff address — this account will include the attendance tab.">إيميل موظف Vision Guard — الحساب ده هيتضاف له تبويب الحضور.</span>
+              </div>
+              <div class="field">
+                <label for="sPhone" data-en="Mobile number (optional)">رقم الموبايل (اختياري)</label>
+                <input id="sPhone" inputmode="tel" autocomplete="tel" dir="ltr" placeholder="01012345678" maxlength="20">
+              </div>
+              <div class="field">
+                <label for="sPass" data-en="Password">كلمة السر</label>
+                <input id="sPass" type="password" required autocomplete="new-password" dir="ltr" maxlength="200">
+                <p class="pwhint" data-en="At least 8 characters, with a letter and a number.">٨ حروف على الأقل، وفيها حرف ورقم.</p>
+              </div>
+
+              <div class="consents">
+                <label class="check">
+                  <input type="checkbox" id="sTerms" required>
+                  <span data-en="I have read and accept the <a href=&quot;https://visionguardeg.com/pages/terms-and-conditions&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>terms of use</a> and the <a href=&quot;https://visionguardeg.com/pages/privacy-policy&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>privacy policy</a>. (Required)">
+                    قرأت وأوافق على <a href="https://visionguardeg.com/pages/terms-and-conditions" target="_blank" rel="noopener">شروط الاستخدام</a> و<a href="https://visionguardeg.com/pages/privacy-policy" target="_blank" rel="noopener">سياسة الخصوصية</a>. (مطلوب)
+                  </span>
+                </label>
+                <label class="check">
+                  <input type="checkbox" id="sNews">
+                  <span data-en="Subscribe me to the newsletter: new arrivals, price drops and seasonal offers. (Optional)">
+                    اشتركوني في النشرة البريدية: منتجات جديدة، تخفيضات، وعروض موسمية. (اختياري)
+                  </span>
+                </label>
+                <label class="check">
+                  <input type="checkbox" id="sMarketing">
+                  <span data-en="I agree to receive marketing messages on WhatsApp and SMS about offers. (Optional — you can withdraw this at any time from your account.)">
+                    أوافق على استقبال رسائل تسويقية على واتساب والرسائل القصيرة بخصوص العروض. (اختياري — وتقدر تسحب الموافقة في أي وقت من حسابك.)
+                  </span>
+                </label>
+              </div>
+
+              <p class="formerr" id="signupErr" role="alert" hidden></p>
+              <button class="btn btn--wide" id="signupBtn" type="submit"><span data-en="Create account">اعمل الحساب</span></button>
+              <p class="fineprint" data-en="We never sell your data, and marketing consent is separate from the account itself — unticking those boxes changes nothing about your orders.">
+                إحنا مابنبيعش بياناتك، والموافقة التسويقية منفصلة تمامًا عن الحساب — لو ماعلّمتش على الخانات دي مش هيأثر على طلباتك بأي شكل.
+              </p>
+            </form>
+            <p class="auth__alt">
+              <span data-en="Already have an account?">عندك حساب بالفعل؟</span>
+              <button type="button" data-goto="login" data-en="Sign in">سجّل الدخول</button>
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SIGNED IN ============ -->
+  <section class="view dash" id="viewDash" hidden>
+    <div class="shell">
+
+      <header class="dash__head">
+        <div class="dash__hello">
+          <p class="eyebrow"><span class="dot"></span><span data-en="Signed in">مسجّل دخول</span></p>
+          <h1 class="dash__name" id="dashName"></h1>
+          <p class="dash__email" id="dashEmail" dir="ltr"></p>
+          <p class="dash__badge" id="dashBadge" hidden><span data-en="Vision Guard staff">موظف Vision Guard</span></p>
+        </div>
+        <button class="btn btn--ghost btn--sm" id="logoutBtn" type="button"><span data-en="Sign out">تسجيل الخروج</span></button>
+      </header>
+
+      <div class="tabs" role="tablist">
+        <button class="tab is-on" data-tab="orders" role="tab" aria-selected="true" data-en="My orders">طلباتي</button>
+        <button class="tab" data-tab="attendance" id="tabAttendance" role="tab" aria-selected="false" hidden data-en="Attendance">الحضور</button>
+        <button class="tab" data-tab="prefs" role="tab" aria-selected="false" data-en="Preferences">التفضيلات</button>
+      </div>
+
+      <!-- ---- ORDERS ---- -->
+      <div class="panel" id="panelOrders" role="tabpanel">
+        <div class="card">
+          <h2 class="card__title" data-en="Your orders">طلباتك</h2>
+          <div id="ordersList"></div>
+        </div>
+      </div>
+
+      <!-- ---- ATTENDANCE ---- -->
+      <div class="panel" id="panelAttendance" role="tabpanel" hidden>
+        <div class="card">
+          <h2 class="card__title" data-en="Today">النهارده</h2>
+          <p class="card__note" id="attTarget"></p>
+
+          <div class="clock">
+            <div class="dial">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="dial__track" cx="60" cy="60" r="52" fill="none" stroke-width="7"/>
+                <circle class="dial__fill" id="dialFill" cx="60" cy="60" r="52" fill="none" stroke-width="7"
+                        stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+              </svg>
+              <div class="dial__mid">
+                <span class="dial__big" id="dialBig">0:00</span>
+                <span class="dial__sub" id="dialSub"></span>
+              </div>
+            </div>
+
+            <div class="clock__side">
+              <p class="clock__state is-off" id="clockState">
+                <span class="dot"></span><span id="clockStateText"></span>
+              </p>
+              <p class="clock__since" id="clockSince"></p>
+              <button class="btn" id="clockBtn" type="button"></button>
+              <p class="formerr" id="attErr" role="alert" hidden></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" data-en="Last 30 days">آخر ٣٠ يوم</h2>
+          <div class="stats" id="attStats"></div>
+          <div class="tablewrap">
+            <table class="att">
+              <thead>
+                <tr>
+                  <th data-en="Day">اليوم</th>
+                  <th data-en="In / Out">حضور / انصراف</th>
+                  <th data-en="Hours">الساعات</th>
+                  <th data-en="Vs target">مقارنة بالهدف</th>
+                  <th data-en="Status">الحالة</th>
+                </tr>
+              </thead>
+              <tbody id="attRows"></tbody>
+            </table>
+          </div>
+          <p class="card__note" id="attFoot"></p>
+        </div>
+      </div>
+
+      <!-- ---- PREFERENCES ---- -->
+      <div class="panel" id="panelPrefs" role="tabpanel" hidden>
+        <div class="card">
+          <h2 class="card__title" data-en="Your details">بياناتك</h2>
+          <form id="prefsForm" novalidate>
+            <div class="frow">
+              <div class="field">
+                <label for="pName" data-en="Full name">الاسم بالكامل</label>
+                <input id="pName" maxlength="120" autocomplete="name">
+              </div>
+              <div class="field">
+                <label for="pPhone" data-en="Mobile number">رقم الموبايل</label>
+                <input id="pPhone" inputmode="tel" dir="ltr" maxlength="20" autocomplete="tel" placeholder="01012345678">
+              </div>
+            </div>
+
+            <div class="consents">
+              <label class="check">
+                <input type="checkbox" id="pNews">
+                <span data-en="Newsletter — new arrivals, price drops and seasonal offers by email.">النشرة البريدية — منتجات جديدة، تخفيضات، وعروض موسمية على الإيميل.</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" id="pMarketing">
+                <span data-en="Marketing messages on WhatsApp and SMS.">رسائل تسويقية على واتساب والرسائل القصيرة.</span>
+              </label>
+            </div>
+
+            <p class="formerr" id="prefsErr" role="alert" hidden></p>
+            <p class="formok" id="prefsOk" role="status" hidden></p>
+            <button class="btn" id="prefsBtn" type="submit"><span data-en="Save changes">احفظ التغييرات</span></button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" data-en="Withdrawing consent">سحب الموافقة</h2>
+          <p class="card__note" data-en="Unticking the newsletter box above removes you from the mailing list immediately — it does not merely mark a flag. Your account and your order history are untouched either way.">
+            لما تشيل العلامة من خانة النشرة فوق، بيتشال اسمك من القائمة البريدية فورًا — مش مجرد تغيير حالة. وحسابك وسجل طلباتك مابيتأثروش خالص في الحالتين.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ LOADING ============ -->
+  <section class="view" id="viewLoading">
+    <div class="shell" style="padding-block:120px; text-align:center; color:var(--ink-4)">
+      <p data-en="Loading…">جاري التحميل…</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="shell">
+    <div class="footer__bar" style="border-top:0; margin-top:0">
+      <p>&copy; <span id="year">2026</span> Vision Guard. <span data-en="All rights reserved.">جميع الحقوق محفوظة.</span></p>
+      <a class="totop" href="index.html"><span data-en="Back to the site">رجوع للموقع</span> <i aria-hidden="true">←</i></a>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="account.js"></script>
+</body>
+</html>

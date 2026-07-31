@@ -1,0 +1,74 @@
+# Cloudflare Pages — response headers
+# Order matters: later matching rules add to earlier ones.
+#
+# These rules apply to STATIC assets. Pages Functions (/api/*) set their own
+# headers in code — lib/util.js sends `Cache-Control: no-store` on every JSON
+# response, which is what you want for a cart, a session or an attendance
+# record.
+
+/*
+  # --- security ---
+  # Every page carries the SAME one-line inline <script> in <head> (the
+  # no-js -> js class swap). It must run before paint, so it cannot move to an
+  # external file without a flash of hidden content — it is allow-listed by
+  # hash instead. All three pages share one hash because the script is byte
+  # for byte identical; keep it that way. If you edit it anywhere, recompute
+  # and update this value, or the reveal animations silently stop working:
+  #   node -e "const c=require('crypto');console.log('sha256-'+c.createHash('sha256').update(process.argv[1]).digest('base64'))" "<script body>"
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Kujm0/4azSdOPOSA6aaqqQwa4A5Ur08aglfQkpthXJo='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+# --- caching ---
+# HTML must revalidate so a redeploy is picked up immediately. Both the
+# extensionless and the .html form are listed: Pages serves /shop and
+# /shop.html, and a rule matches the requested path, not the file behind it.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/shop
+  Cache-Control: public, max-age=0, must-revalidate
+
+/shop.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/account
+  Cache-Control: no-store
+
+/account.html
+  Cache-Control: no-store
+
+# CSS and JS are unhashed filenames, so they cannot be cached immutably.
+# One hour, then revalidate — cheap because 304s are tiny.
+/styles.css
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/app.css
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/main.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/site.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/shop.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/account.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# The catalogue changes whenever a price does, and a stale copy would show a
+# customer a price the server will not honour. Five minutes, then revalidate.
+/catalog.js
+  Cache-Control: public, max-age=300, must-revalidate
+
+# Images are content-stable; if one changes, change its filename.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
