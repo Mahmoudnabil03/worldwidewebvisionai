@@ -19,8 +19,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="app.css">
+<!-- ?v= is a cache buster, and it is load-bearing until the zone cache rule is
+     fixed. A Cache Rule on visionguardeg.com overrides the Cache-Control in
+     _headers with a 4-hour TTL, so a CSS change would otherwise take four
+     hours to reach anyone who had already visited. The HTML itself is
+     no-store, so a changed href here is picked up immediately. Bump V on any
+     CSS change, or better: set that rule to respect origin headers and drop
+     this entirely. -->
+<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="app.css?v=2">
 
 <script>(function(d){var c=d.documentElement;c.className=c.className.replace('no-js','js');try{var t=localStorage.getItem('vg-theme');if(t==='light'||t==='dark'){c.setAttribute('data-theme',t);}}catch(e){}})(document);</script>
 </head>
