@@ -659,6 +659,12 @@ Secrets**, as *encrypted secrets* — not plaintext variables. Locally they go i
 | `WHATSAPP_*` / `ULTRAMSG_*` / `TWILIO_*` / `CALLMEBOT_KEY` | No | Pick one provider — see the table above. |
 | `WORK_DAY_HOURS` | No | Contracted day. Default `6`. Already set in `wrangler.toml`. |
 | `SHIPPING_FLAT` | No | Flat shipping fee in EGP. Default `0` = quoted at confirmation. |
+| `META_PIXEL_ID` | No | Meta Pixel ID for browser and server-side conversion tracking. |
+| `META_DATASET_ID` | No | Optional Meta dataset ID to send CAPI events to instead of a pixel. |
+| `META_ACCESS_TOKEN` | No | Meta Conversions API secret token. Keep this in secrets only. |
+| `META_CURRENCY` | No | Currency code for events. Defaults to `EGP`. |
+| `META_TEST_EVENT_CODE` | No | Optional Meta test event code for debugging. |
+| `META_ATTRIBUTION_SHARE` | No | Optional attribution share, default `0.3`. |
 | `PBKDF2_ITERATIONS` | No | Default `25000`. Raise to `210000` on the Workers Paid plan. |
 
 Generate the secret:

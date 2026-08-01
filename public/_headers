@@ -32,7 +32,34 @@
   # still governs <style> blocks and stylesheet URLs and still has no
   # 'unsafe-inline', so injected <style> elements remain blocked. That is the
   # narrowest thing that makes the button work.
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Kujm0/4azSdOPOSA6aaqqQwa4A5Ur08aglfQkpthXJo=' https://accounts.google.com; style-src 'self' https://fonts.googleapis.com https://accounts.google.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  # Meta Pixel needs three of these widened. It is worth knowing exactly which,
+  # because a missing one fails silently — the pixel simply never fires and
+  # nothing in the page says so:
+  #   script-src   connect.facebook.net, which serves fbevents.js. The loader
+  #                itself is public/pixel.js, an ordinary same-origin file, so
+  #                it needs no hash — that is the whole reason it is not inline.
+  #   img-src      www.facebook.com, for the <noscript> tracking pixel and for
+  #                the 1x1 GIFs fbevents.js uses to deliver events.
+  #   connect-src  facebook.com, which newer fbevents builds use in place of
+  #                image beacons.
+  #   frame-src +  form-action, both facebook.com. These two are the pixel's
+  #                fallback transport: when an event payload is too big for a
+  #                GET image beacon — Purchase, which carries value, currency
+  #                and content data, is exactly that case — fbevents posts a
+  #                form into a hidden iframe instead. Blocking either half
+  #                makes the fallback fail silently, so the events that matter
+  #                most for ad attribution are the ones most likely to go
+  #                missing. Verified: with these blocked, checkout logged
+  #                form-action and frame-src violations on every order.
+  #
+  # form-action is the one worth a second thought, since it governs where ANY
+  # form on the site may submit. It is acceptable here because script-src has
+  # no 'unsafe-inline' and the site renders no user-supplied HTML, so there is
+  # no practical way to inject a form to abuse it. If you would rather keep
+  # form-action locked to 'self', you can: the server-side Conversions API in
+  # functions/api/orders.js already reports Purchase independently of the
+  # browser, and Meta deduplicates the two.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Kujm0/4azSdOPOSA6aaqqQwa4A5Ur08aglfQkpthXJo=' https://accounts.google.com https://connect.facebook.net; style-src 'self' https://fonts.googleapis.com https://accounts.google.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com https://www.facebook.com; connect-src 'self' https://accounts.google.com https://www.facebook.com https://connect.facebook.net; frame-src https://accounts.google.com https://www.facebook.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.facebook.com; frame-ancestors 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
@@ -88,6 +115,9 @@
   Cache-Control: public, max-age=3600, must-revalidate
 
 /google-auth.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/pixel.js
   Cache-Control: public, max-age=3600, must-revalidate
 
 # The catalogue changes whenever a price does, and a stale copy would show a

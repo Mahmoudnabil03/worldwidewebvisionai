@@ -420,7 +420,7 @@ input:disabled, textarea:disabled, select:disabled{ opacity:.55; cursor:not-allo
    actually loaded, so a blocked script leaves no empty gap. */
 .gauth{ display:grid; justify-items:center; gap:12px; margin-block:4px 20px; }
 .gauth[hidden]{ display:none; }
-.gauth__btn{ min-height:44px; display:grid; place-items:center; width:100%; }
+.gauth__btn{ min-height:48px; display:flex; justify-content:center; align-items:center; width:100%; }
 
 /* Safety net, and it earns its keep.
 
@@ -437,7 +437,7 @@ input:disabled, textarea:disabled, select:disabled{ opacity:.55; cursor:not-allo
    damage to a plain-looking button when they do not. A misconfiguration
    should look unremarkable, not broken. */
 .gauth__btn svg{ display:inline-block; max-width:24px; max-height:24px; }
-.gauth__btn > div{ max-width:100%; }
+.gauth__btn > div{ display:flex; justify-content:center; width:100%; max-width:320px; }
 .gauth__note{ font-size:.6875rem; color:var(--ink-4); line-height:1.55; text-align:center; max-width:36ch; }
 .gauth__err{
   width:100%; padding:11px 14px;

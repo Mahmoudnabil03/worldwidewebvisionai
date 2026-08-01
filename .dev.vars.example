@@ -71,5 +71,15 @@ WHATSAPP_TO="201105006854"
 # -- Option 4: CallMeBot (free, one recipient, plain text) -------------------
 # CALLMEBOT_KEY=""
 
+# ---------------------------------------------------------------------------
+# Meta Conversion API (server-side, no secret in source code)
+# ---------------------------------------------------------------------------
+# META_PIXEL_ID=""           # your Meta Pixel ID, e.g. 123456789012345
+# META_DATASET_ID=""         # optional Meta dataset ID, e.g. 37444427775716864
+# META_ACCESS_TOKEN=""       # secret access token for CAPI requests
+# META_CURRENCY="EGP"        # optional currency code for purchase events
+# META_TEST_EVENT_CODE=""    # optional debugging code from Events Manager
+# META_ATTRIBUTION_SHARE="0.3"  # optional attribution share for the event
+
 # Force a provider instead of auto-detecting from whichever keys are present.
 # WHATSAPP_PROVIDER="meta"
