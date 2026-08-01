@@ -53,6 +53,24 @@ binding = "AI"
 # production. See .dev.vars.example.
 # --------------------------------------------------------------------------
 [vars]
+# WhatsApp order alerts. Neither of these is a secret — the token and the
+# phone id are, and they stay in the dashboard.
+#
+# The template matters. A plain-text WhatsApp message is only deliverable
+# inside a 24-hour window after the recipient last messaged the business
+# number, and an order alert to the shop's own phone is essentially never
+# inside that window — it fails with error 131047 and the alert is lost at
+# exactly the moment it is wanted. A template has no such limit.
+#
+# This name and language must match a template APPROVED in the WhatsApp
+# Manager, and its body must take two parameters in this order:
+#   {{1}} order number      {{2}} total
+# Those are what functions/api/orders.js passes. If the approved template
+# differs, change it there and here together, or the send is rejected for a
+# parameter-count mismatch.
+WHATSAPP_TEMPLATE = "new_order_alert"
+WHATSAPP_TEMPLATE_LANG = "en_US"
+
 # Contracted working day, in hours. Drives the attendance targets.
 WORK_DAY_HOURS = "6"
 # Flat shipping fee in EGP. 0 means "quoted per governorate at confirmation",

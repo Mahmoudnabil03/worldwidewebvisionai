@@ -107,8 +107,14 @@ export const onRequestPost = handle(async (context) => {
      Fired after the write and through waitUntil, so a WhatsApp outage cannot
      slow down or fail an order that has already been taken. */
   const text = orderMessage(order, env);
+  /* The two template parameters, in the order the approved template declares
+     them: {{1}} the order number, {{2}} the total. They are passed separately
+     from `text` because a template cannot carry the full multi-line summary —
+     `text` is still used for the plain-text path and for the fallback when a
+     template send is rejected. See lib/whatsapp.js. */
+  const templateParams = [id, `${total} EGP`];
   context.waitUntil(
-    notifyWhatsApp(env, text).then((result) => recordNotify(d1, id, result))
+    notifyWhatsApp(env, text, null, templateParams).then((result) => recordNotify(d1, id, result))
   );
 
   const requestUrl = request.url || '';
