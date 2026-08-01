@@ -525,6 +525,17 @@ orderForm.addEventListener('submit', async (e) => {
 
     $('#doneNum').textContent = data.order.id;
     $('#doneNote').textContent = t(T.doneNote);
+    try {
+      if (window.fbq) {
+        window.fbq('track', 'Purchase', {
+          content_name: 'Vision Guard Order',
+          currency: 'EGP',
+          value: Number(data.order.total || 0)
+        });
+      }
+    } catch (e) {
+      console.info('fbq purchase event skipped', e);
+    }
     showView('done');
   } catch (err) {
     showError(err);

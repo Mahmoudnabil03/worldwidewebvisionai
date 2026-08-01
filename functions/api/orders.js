@@ -20,6 +20,7 @@ import {
   orderMessage, publicOrder
 } from '../../lib/orders.js';
 import { notifyWhatsApp, recordNotify } from '../../lib/whatsapp.js';
+import { sendMetaPurchaseEvent } from '../../lib/meta.js';
 
 export const onRequestPost = handle(async (context) => {
   const { request, env } = context;
@@ -108,6 +109,21 @@ export const onRequestPost = handle(async (context) => {
   const text = orderMessage(order, env);
   context.waitUntil(
     notifyWhatsApp(env, text).then((result) => recordNotify(d1, id, result))
+  );
+
+  const requestUrl = request.url || '';
+  context.waitUntil(
+    sendMetaPurchaseEvent(env, {
+      ...order,
+      total,
+      value: total,
+      subtotal,
+      shipping
+    }, requestUrl).then((result) => {
+      if (!result || result.ok !== true) {
+        console.info('meta purchase skipped or failed', result);
+      }
+    })
   );
 
   return json({ ok: true, order: publicOrder(order) }, 201);

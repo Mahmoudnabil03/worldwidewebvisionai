@@ -1,6 +1,6 @@
 /* =========================================================================
    Vision Guard — google-auth.js
-   The Google client ID, and the "Continue with Google" button.
+   The Google client ID, and the Google sign-in button.
 
    Imported twice, exactly like catalog.js:
      • the browser, by account.js
@@ -87,11 +87,13 @@ export async function mountGoogleButtons(targets, onCredential, opts) {
       callback: (res) => {
         if (res && res.credential && credentialHandler) credentialHandler(res.credential);
       },
-      /* One Tap is deliberately off. It pops over the page uninvited, and on a
-         shop that mostly gets first-time visitors it reads as an interruption
-         rather than a convenience. The button is enough. */
+      /* Use the newer GIS settings for a smoother sign-in experience and to
+         avoid the older popup flow issues that can show up with some browsers. */
       auto_select: false,
       cancel_on_tap_outside: true,
+      context: 'signin',
+      itp_support: true,
+      use_fedcm_for_prompt: true,
       ux_mode: 'popup'
     });
   }
@@ -101,11 +103,11 @@ export async function mountGoogleButtons(targets, onCredential, opts) {
     node.textContent = '';
     gid.renderButton(node, {
       type: 'standard',
-      theme: o.theme === 'light' ? 'outline' : 'filled_black',
+      theme: o.theme === 'light' ? 'outline' : 'filled_blue',
       size: 'large',
-      shape: 'pill',
-      text: o.text || 'continue_with',
-      logo_alignment: 'center',
+      shape: 'rectangular',
+      text: o.text || 'signin_with',
+      logo_alignment: 'left',
       locale: o.locale === 'en' ? 'en' : 'ar',
       width: o.width || 320
     });

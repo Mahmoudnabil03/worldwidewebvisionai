@@ -165,7 +165,8 @@ function unbusy(btn, label) {
     mounting = mountGoogleButtons(slots, onCredential, {
       theme: THEME,
       locale: LANG,
-      text: 'continue_with'
+      text: 'signin_with',
+      width: 320
     }).then((ok) => {
       document.querySelectorAll('.gauth').forEach((g) => { g.hidden = !ok; });
       return ok;
