@@ -10,8 +10,9 @@
    ========================================================================= */
 import {
   $, $$, initChrome, onLang, LANG, t, money, currency, esc, api, toast,
-  hoursLabel, hhmm, localDate, localTime
+  hoursLabel, hhmm, localDate, localTime, THEME, onTheme
 } from './site.js';
+import { mountGoogleButtons } from './google-auth.js';
 
 initChrome();
 
@@ -119,6 +120,63 @@ function unbusy(btn, label) {
   btn.disabled = false;
   btn.innerHTML = `<span>${esc(label)}</span>`;
 }
+
+/* -------------------------------------------------------------------------
+   Continue with Google
+
+   One handler for both buttons: from here it is the same call, and the
+   server decides whether it turned out to be a sign-in, a link onto an
+   existing account, or a new account.
+
+   The button is Google's own iframe, so it is re-rendered rather than
+   restyled when the theme or the language changes.
+   ------------------------------------------------------------------------- */
+(function googleAuth() {
+  const slots = [$('#googleLogin'), $('#googleSignup')].filter(Boolean);
+  if (!slots.length) return;
+
+  const errEl = $('#googleErr');
+  let working = false;
+
+  async function onCredential(credential) {
+    if (working) return;
+    working = true;
+    if (errEl) errEl.hidden = true;
+    try {
+      const data = await api('/api/auth/google', { body: { credential, lang: LANG } });
+      await enter(data.user);
+    } catch (err) {
+      if (errEl) {
+        errEl.textContent = err.display || err.message;
+        errEl.hidden = false;
+      } else {
+        toast(err.display || err.message, 'bad');
+      }
+    } finally {
+      working = false;
+    }
+  }
+
+  let mounting = null;
+  function mount() {
+    /* Google's script is fetched from accounts.google.com. A blocked or
+       failed load must not leave a dead area where a button should be: the
+       whole block is hidden and the email form carries on alone. */
+    mounting = mountGoogleButtons(slots, onCredential, {
+      theme: THEME,
+      locale: LANG,
+      text: 'continue_with'
+    }).then((ok) => {
+      document.querySelectorAll('.gauth').forEach((g) => { g.hidden = !ok; });
+      return ok;
+    });
+    return mounting;
+  }
+
+  mount();
+  onLang(() => mount());
+  onTheme(() => mount());
+})();
 
 /* ---- sign in ---- */
 $('#loginForm').addEventListener('submit', async (e) => {

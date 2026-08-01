@@ -17,7 +17,10 @@ CREATE TABLE IF NOT EXISTS users (
   email         TEXT NOT NULL UNIQUE,          -- always lowercased before write
   name          TEXT NOT NULL,
   phone         TEXT,                          -- E.164 without '+', e.g. 201012345678
-  pw_hash       TEXT NOT NULL,                 -- pbkdf2$<iters>$<saltB64>$<hashB64>
+  pw_hash       TEXT NOT NULL,                 -- pbkdf2$<iters>$<saltB64>$<hashB64>,
+                                               -- or the GOOGLE_ONLY_PW sentinel for an
+                                               -- account that only signs in with Google
+  google_sub    TEXT,                          -- Google's stable account id; NULL until linked
   role          TEXT NOT NULL DEFAULT 'customer',  -- 'customer' | 'staff'
   marketing     INTEGER NOT NULL DEFAULT 0,
   newsletter    INTEGER NOT NULL DEFAULT 0,
@@ -26,6 +29,9 @@ CREATE TABLE IF NOT EXISTS users (
   created_at    TEXT NOT NULL,
   last_login_at TEXT
 );
+-- One Google identity, one account. NULLs do not collide in SQLite, so every
+-- password-only account is unaffected.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google ON users (google_sub);
 
 CREATE TABLE IF NOT EXISTS orders (
   id           TEXT PRIMARY KEY,               -- human order number, e.g. VG-260731-K3QX

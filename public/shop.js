@@ -100,7 +100,9 @@ const T = {
   },
   qtyLabel:     { ar: 'الكمية', en: 'Quantity' },
   minus:        { ar: 'قلل واحد', en: 'Decrease by one' },
-  plus:         { ar: 'زوّد واحد', en: 'Increase by one' }
+  plus:         { ar: 'زوّد واحد', en: 'Increase by one' },
+  barOne:       { ar: 'منتج واحد في السلة', en: '1 item in your cart' },
+  barMany:      { ar: 'منتجات في السلة', en: 'items in your cart' }
 };
 
 /* =========================================================================
@@ -255,6 +257,7 @@ function openCart() {
   scrim.hidden = false;
   requestAnimationFrame(() => scrim.classList.add('is-on'));
   document.documentElement.style.overflow = 'hidden';
+  renderCheckoutBar();
   const first = $('button, a, input', cartEl);
   if (first) first.focus();
 }
@@ -267,6 +270,7 @@ function closeCart() {
   scrim.classList.remove('is-on');
   setTimeout(() => { if (!scrim.classList.contains('is-on')) scrim.hidden = true; }, 350);
   document.documentElement.style.overflow = '';
+  renderCheckoutBar();
 }
 
 cartBtn.addEventListener('click', () => {
@@ -277,6 +281,44 @@ scrim.addEventListener('click', closeCart);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && cartEl.classList.contains('is-on')) closeCart();
 });
+
+/* =========================================================================
+   4b. CHECKOUT BAR
+   Up the moment the cart stops being empty, down when it empties again.
+   Checkout otherwise lives only at the bottom of the drawer, which costs a
+   tap to open and gives no reason to open it.
+   ========================================================================= */
+let currentView = 'shop';
+const cobar = $('#cobar');
+const cobarCount = $('#cobarCount');
+const cobarTotal = $('#cobarTotal');
+const cobarGo = $('#cobarGo');
+
+/* Anything else pinned to the bottom of the viewport offsets by this. It is
+   measured rather than assumed: the pill grows when the total wraps, and in
+   Arabic the copy is a different length. */
+function publishBarHeight(on) {
+  document.body.style.setProperty('--cobar-h', on ? `${cobar.offsetHeight}px` : '0px');
+}
+
+function renderCheckoutBar() {
+  const count = cartCount();
+  /* Not on the checkout or confirmation views: there it is either the thing
+     you are already doing or an order that is already placed. Not over the
+     open drawer either — the drawer has its own checkout button. */
+  const on = count > 0 && currentView === 'shop' && !cartEl.classList.contains('is-on');
+
+  cobarCount.textContent = count === 1 ? t(T.barOne) : `${count} ${t(T.barMany)}`;
+  cobarTotal.textContent = `${money(subtotal())} ${currency()}`;
+  cobarGo.textContent = t(T.checkout);
+
+  cobar.classList.toggle('is-on', on);
+  if (on) cobar.removeAttribute('inert');
+  else cobar.setAttribute('inert', '');
+  publishBarHeight(on);
+}
+
+cobarGo.addEventListener('click', () => showView('checkout'));
 
 function renderCart() {
   const lines = cartLines();
@@ -294,6 +336,7 @@ function renderCart() {
       </div>`;
     cartFoot.innerHTML = '';
     renderSummary();
+    renderCheckoutBar();
     return;
   }
 
@@ -324,6 +367,7 @@ function renderCart() {
 
   $('#toCheckout').addEventListener('click', () => { closeCart(); showView('checkout'); });
   renderSummary();
+  renderCheckoutBar();
 }
 
 cartBody.addEventListener('click', (e) => {
@@ -347,6 +391,8 @@ const views = {
 function showView(name) {
   if (name === 'checkout' && !cart.length) { openCart(); return; }
   Object.keys(views).forEach((k) => { views[k].hidden = k !== name; });
+  currentView = name;
+  renderCheckoutBar();
   window.scrollTo(0, 0);
   if (name === 'checkout') {
     renderSummary();

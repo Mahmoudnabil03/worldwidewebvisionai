@@ -12,8 +12,6 @@
 
   /* ---------------- math ---------------- */
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
-  function rng(v, a, b)   { return b === a ? (v >= b ? 1 : 0) : clamp((v - a) / (b - a), 0, 1); }
-  function ease(t)        { return t * t * (3 - 2 * t); }
   function inOutCubic(t)  { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 
   /* =======================================================================
@@ -211,25 +209,24 @@
   });
 
   /* =======================================================================
-     4. NAV — stuck state, progress bar, active section, menu, WhatsApp fab
+     4. NAV — stuck state, progress bar, active section, menu
+
+     The floating button in the corner is no longer this file's business: it
+     is the assistant now, it is on from first paint rather than fading in
+     past the hero, and assistant.js owns it end to end.
      ======================================================================= */
   var nav      = document.getElementById('nav');
   var bar      = document.getElementById('progressBar');
   var burger   = document.getElementById('burger');
   var menu     = document.getElementById('menu');
-  var fab      = document.querySelector('.wafab');
   var navLinks = [].slice.call(document.querySelectorAll('[data-nav]'));
-  var wasStuck = false, wasFab = false;
+  var wasStuck = false;
 
   onFrame(function () {
     var y = window.scrollY, max = maxScroll();
     var stuck = y > 40;
     if (stuck !== wasStuck) { nav.classList.toggle('is-stuck', stuck); wasStuck = stuck; }
     if (bar) bar.style.transform = 'scaleX(' + (max ? y / max : 0) + ')';
-    if (fab) {
-      var show = y > window.innerHeight * .9;
-      if (show !== wasFab) { fab.classList.toggle('is-on', show); wasFab = show; }
-    }
     return false;
   });
 
@@ -374,259 +371,17 @@
   setTimeout(heroIntro, introDelay + 1100);
 
   /* =======================================================================
-     6. HERO — scroll-scrubbed sensor field
-     A perspective dot field powers on, a scan pass sweeps it, the
-     classifier locks on, then the feed reaches the phone.
+     6. HERO
+
+     Deliberately empty. The hero used to run a scroll-scrubbed canvas here —
+     a sensor field that powered on, a scan line that swept it, MOTION and
+     VEHICLE reticles that locked on, a link to a phone outline, then a focus
+     frame around the whole screen, all driven by scroll position across a
+     185vh track. It was removed: the hero is one static screen now, its
+     backdrop is the CSS-only .hero__field, and nothing in it responds to the
+     wheel. The only hero motion left is the one-time intro fade above, which
+     runs on load and never again.
      ======================================================================= */
-  (function heroCanvas() {
-    var cv = document.getElementById('heroCanvas');
-    if (!cv || !cv.getContext) return;
-
-    var track   = document.querySelector('.hero__track');
-    var stage   = document.querySelector('.hero__stage');
-    var content = document.querySelector('.hero__content');
-    var cue     = document.querySelector('.hero__cue');
-    var hudLis  = [].slice.call(document.querySelectorAll('.hud__list li'));
-    var ctx     = cv.getContext('2d');
-
-    /* Both colours come straight from CSS so the tokens stay the single
-       source of truth for the whole site, canvas included. They are re-read
-       on every resize/refresh, which is also what a theme change triggers —
-       a near-white dot field would be invisible on the light background. */
-    var ACC = '27,157,217';
-    var INK = '242,245,247';
-
-    function readColours() {
-      var cs = getComputedStyle(root);
-      ACC = (cs.getPropertyValue('--accent-rgb') || '').trim() || '27,157,217';
-      INK = (cs.getPropertyValue('--canvas-ink-rgb') || '').trim() || '242,245,247';
-    }
-
-    var W = 0, H = 0, DPR = 1, HZ = 0, narrow = false;
-    var field = [], glow = null, RET = [];
-    var lastHud = -1;
-
-    function buildField() {
-      var pts = [], rows = narrow ? 13 : 17, cols = narrow ? 20 : 30;
-      for (var r = 0; r < rows; r++) {
-        var d = r / (rows - 1);
-        var y = HZ + Math.pow(d, 2.25) * (H - HZ) * 1.06;
-        var spread = .16 + Math.pow(d, 1.6) * 2.2;
-        for (var c = 0; c < cols; c++) {
-          var u = c / (cols - 1) - .5;
-          var x = W * .5 + u * W * spread;
-          if (x < -30 || x > W + 30) continue;
-          pts.push({ x: x, y: y, d: d, r: .55 + d * 1.5, s: (c * 7 + r * 13) % 20 });
-        }
-      }
-      return pts;
-    }
-
-    function resize() {
-      readColours();
-      var r = cv.getBoundingClientRect();
-      W = Math.max(1, Math.round(r.width));
-      H = Math.max(1, Math.round(r.height));
-      narrow = W < 760;
-      DPR = Math.min(window.devicePixelRatio || 1, 2);
-      cv.width  = Math.round(W * DPR);
-      cv.height = Math.round(H * DPR);
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-      HZ = Math.round(H * (narrow ? .46 : .50));
-      field = buildField();
-
-      glow = ctx.createLinearGradient(0, HZ - H * .26, 0, HZ + H * .16);
-      glow.addColorStop(0,   'rgba(' + ACC + ',0)');
-      glow.addColorStop(.74, 'rgba(' + ACC + ',.055)');
-      glow.addColorStop(1,   'rgba(' + ACC + ',0)');
-
-      RET = narrow
-        ? [{ x: .30, y: .70, w: .12, h: .19, at: .40, l: 'MOTION' },
-           { x: .72, y: .80, w: .20, h: .11, at: .52, l: 'VEHICLE' }]
-        : [{ x: .575, y: .625, w: .050, h: .150, at: .40, l: 'MOTION' },
-           { x: .775, y: .720, w: .110, h: .085, at: .50, l: 'VEHICLE' },
-           { x: .665, y: .570, w: .034, h: .098, at: .59, l: 'MOTION' }];
-
-      /* the headline sits on the leading side, so mirror the detections to
-         the trailing side rather than letting them sit under the type */
-      if (root.getAttribute('dir') === 'rtl' && !narrow) {
-        RET = RET.map(function (q) { return Object.assign({}, q, { x: 1 - q.x }); });
-      }
-    }
-
-    function brackets(x, y, w, h, len, a) {
-      ctx.strokeStyle = 'rgba(' + ACC + ',' + a + ')';
-      ctx.lineWidth = 1.25;
-      ctx.beginPath();
-      ctx.moveTo(x, y + len);         ctx.lineTo(x, y);         ctx.lineTo(x + len, y);
-      ctx.moveTo(x + w - len, y);     ctx.lineTo(x + w, y);     ctx.lineTo(x + w, y + len);
-      ctx.moveTo(x + w, y + h - len); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w - len, y + h);
-      ctx.moveTo(x + len, y + h);     ctx.lineTo(x, y + h);     ctx.lineTo(x, y + h - len);
-      ctx.stroke();
-    }
-
-    function draw(p, t) {
-      ctx.clearRect(0, 0, W, H);
-
-      /* already alive at rest, deepening as you scroll */
-      var power = .52 + .48 * ease(rng(p, 0, .18));
-
-      ctx.globalAlpha = power;
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = 1;
-
-      /* No horizon hairline: the headline is vertically centred and a hard
-         rule at the same height reads as a strikethrough through the type.
-         The bloom plus the dot field carry the ground plane on their own. */
-
-      var sk = rng(p, .10, .42);
-      var scanY = sk > 0 && sk < 1 ? HZ + (H - HZ) * ease(sk) : -1;
-
-      var front = .34 + p * 1.5;
-      var shimmer = reduce ? 0 : t * .0011;
-      ctx.fillStyle = 'rgba(' + INK + ',1)';
-      for (var i = 0; i < field.length; i++) {
-        var d = field[i];
-        var a = clamp((front - d.d) / .28, 0, 1);
-        if (a <= .01) continue;
-        a *= (.07 + d.d * .34) * power;
-        if (!reduce) a *= .78 + .22 * Math.sin(shimmer + d.s);
-        var rad = d.r;
-        if (scanY > 0) {
-          var dist = Math.abs(d.y - scanY);
-          if (dist < 46) { var b = 1 - dist / 46; a += b * .5; rad += b * .7; }
-        }
-        if (a <= .012) continue;
-        ctx.globalAlpha = clamp(a, 0, 1);
-        ctx.beginPath(); ctx.arc(d.x, d.y, rad, 0, 6.2832); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-
-      if (scanY > 0) {
-        var sa = Math.sin(sk * Math.PI) * .9;
-        var sg = ctx.createLinearGradient(0, 0, W, 0);
-        sg.addColorStop(0,  'rgba(' + ACC + ',0)');
-        sg.addColorStop(.5, 'rgba(' + ACC + ',' + sa + ')');
-        sg.addColorStop(1,  'rgba(' + ACC + ',0)');
-        ctx.strokeStyle = sg; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(0, scanY + .5); ctx.lineTo(W, scanY + .5); ctx.stroke();
-      }
-
-      ctx.font = '500 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-      var hub = { x: W * (narrow ? .5 : .60), y: H * (narrow ? .30 : .26) };
-      var linked = rng(p, .68, .86);
-
-      for (var j = 0; j < RET.length; j++) {
-        var q = RET[j];
-        var k = ease(rng(p, q.at, q.at + .085));
-        if (k <= .01) continue;
-        var bw = W * q.w, bh = H * q.h;
-        var bx = W * q.x - bw / 2, by = H * q.y - bh / 2;
-        var gr = (1 - k) * 14;
-        bx -= gr; by -= gr; bw += gr * 2; bh += gr * 2;
-
-        brackets(bx, by, bw, bh, Math.min(13, bw * .34), k * .95);
-
-        ctx.globalAlpha = k;
-        ctx.fillStyle = 'rgba(' + ACC + ',.95)';
-        ctx.fillText(q.l, bx, by - 8);
-        ctx.globalAlpha = 1;
-
-        if (linked > 0) {
-          ctx.save();
-          ctx.globalAlpha = linked * .5;
-          ctx.strokeStyle = 'rgba(' + ACC + ',.75)';
-          ctx.lineWidth = 1;
-          ctx.setLineDash([2, 5]);
-          ctx.lineDashOffset = reduce ? 0 : -t * .022;
-          ctx.beginPath();
-          ctx.moveTo(bx + bw / 2, by);
-          ctx.lineTo(hub.x, hub.y);
-          ctx.stroke();
-          ctx.restore();
-        }
-      }
-
-      if (linked > 0) {
-        ctx.globalAlpha = linked;
-        ctx.strokeStyle = 'rgba(' + ACC + ',.9)';
-        ctx.lineWidth = 1.25;
-        /* a phone outline — where the feed actually lands */
-        var pw = 26, ph = 46;
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(hub.x - pw / 2, hub.y - ph / 2, pw, ph, 5);
-        else ctx.rect(hub.x - pw / 2, hub.y - ph / 2, pw, ph);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(hub.x, hub.y, 2 + (reduce ? 0 : Math.sin(t * .004) * .8), 0, 6.2832);
-        ctx.fillStyle = 'rgba(' + ACC + ',1)'; ctx.fill();
-        ctx.fillStyle = 'rgba(' + INK + ',.5)';
-        ctx.fillText('LIVE', hub.x + pw / 2 + 10, hub.y + 3.5);
-        ctx.globalAlpha = 1;
-      }
-
-      var arm = ease(rng(p, .84, .97));
-      if (arm > .01) {
-        var m = 26;
-        ctx.globalAlpha = arm * .8;
-        brackets(m, m, W - m * 2, H - m * 2, 22, .55);
-        ctx.globalAlpha = 1;
-      }
-    }
-
-    /* Visibility comes from the rect we already measure for progress, so
-       there is no observer lifecycle to get wrong: off screen the job
-       returns false and the loop idles; the next scroll kicks it back. */
-    onFrame(function (t) {
-      if (!track) return false;
-      var r = track.getBoundingClientRect();
-      var span = r.height - (stage ? stage.offsetHeight : window.innerHeight);
-      if (r.bottom < -200 || r.top > window.innerHeight + 200) return false;
-
-      var p = span <= 0 ? 0 : clamp(-r.top / span, 0, 1);
-      draw(p, t || 0);
-
-      if (content) {
-        content.style.transform = 'translate3d(0,' + (-p * 74) + 'px,0)';
-        content.style.opacity   = String(1 - ease(rng(p, .76, .98)));
-      }
-      if (cue) cue.style.opacity = String(1 - rng(p, .01, .10));
-
-      var idx = p >= .74 ? 3 : p >= .52 ? 2 : p >= .30 ? 1 : 0;
-      if (idx !== lastHud) {
-        hudLis.forEach(function (li, i) {
-          li.classList.toggle('is-on',  i <= idx);
-          li.classList.toggle('is-cur', i === idx);
-        });
-        lastHud = idx;
-      }
-      return true;
-    });
-
-    function refresh() { resize(); kick(); }
-    refresh();
-
-    /* the first measurement can land before layout settles (webfont still
-       blocking render), so track the real box rather than one read */
-    var sizeObs, rswait;
-    if ('ResizeObserver' in window) {
-      sizeObs = new ResizeObserver(function () {
-        clearTimeout(rswait);
-        rswait = setTimeout(refresh, 60);
-      });
-      sizeObs.observe(cv);
-    }
-    window.addEventListener('load', refresh);
-    document.addEventListener('langchange', refresh);    // re-mirror detections
-    document.addEventListener('themechange', refresh);   // re-read the palette
-
-    var rt;
-    window.addEventListener('resize', function () {
-      clearTimeout(rt);
-      rt = setTimeout(refresh, 140);
-    }, { passive: true });
-  })();
 
   /* =======================================================================
      7. HOW TO ORDER — sticky visual follows the step crossing the viewport

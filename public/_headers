@@ -15,7 +15,14 @@
   # for byte identical; keep it that way. If you edit it anywhere, recompute
   # and update this value, or the reveal animations silently stop working:
   #   node -e "const c=require('crypto');console.log('sha256-'+c.createHash('sha256').update(process.argv[1]).digest('base64'))" "<script body>"
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Kujm0/4azSdOPOSA6aaqqQwa4A5Ur08aglfQkpthXJo='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  # Google sign-in needs four of these widened, and no more. accounts.google.com
+  # serves the gsi/client script and its stylesheet, is called for the token
+  # exchange, and renders the button itself inside an iframe (frame-src) — the
+  # button is Google's own, which is both a requirement of theirs and the
+  # reason a look-alike must never be substituted. lh3.googleusercontent.com is
+  # where profile pictures are served from. `frame-ancestors 'none'` is
+  # untouched: other sites still cannot frame us.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Kujm0/4azSdOPOSA6aaqqQwa4A5Ur08aglfQkpthXJo=' https://accounts.google.com; style-src 'self' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
@@ -62,6 +69,15 @@
   Cache-Control: public, max-age=3600, must-revalidate
 
 /account.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/assistant.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/home.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/google-auth.js
   Cache-Control: public, max-age=3600, must-revalidate
 
 # The catalogue changes whenever a price does, and a stale copy would show a

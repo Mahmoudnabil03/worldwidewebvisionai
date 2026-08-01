@@ -98,6 +98,12 @@
             <p class="auth__intro" data-en="Sign in to follow your orders. Vision Guard staff: use your company address to reach the attendance tab.">
               سجّل دخولك عشان تتابع طلباتك. لموظفي Vision Guard: استخدم إيميل الشركة عشان يظهر لك تبويب الحضور.
             </p>
+            <div class="gauth" hidden>
+              <div class="gauth__btn" id="googleLogin"></div>
+              <p class="gauth__err" id="googleErr" role="alert" hidden></p>
+              <p class="gauth__or"><span data-en="or with your email">أو بالإيميل</span></p>
+            </div>
+
             <form id="loginForm" novalidate>
               <div class="field">
                 <label for="lEmail" data-en="Email">الإيميل</label>
@@ -125,6 +131,14 @@
             <p class="auth__intro" data-en="One account for your orders and your preferences. We ask for a mobile number because that is how we confirm deliveries.">
               حساب واحد لطلباتك وتفضيلاتك. بنطلب رقم الموبايل لأنه الطريقة اللي بنأكد بيها التوصيل.
             </p>
+            <div class="gauth" hidden>
+              <div class="gauth__btn" id="googleSignup"></div>
+              <p class="gauth__note" data-en="Signing up with Google means accepting the terms of use and the privacy policy.">
+                التسجيل بجوجل معناه موافقتك على شروط الاستخدام وسياسة الخصوصية.
+              </p>
+              <p class="gauth__or"><span data-en="or fill in the form">أو املأ البيانات</span></p>
+            </div>
+
             <form id="signupForm" novalidate>
               <div class="field">
                 <label for="sName" data-en="Full name">الاسم بالكامل</label>
@@ -328,5 +342,6 @@
 </footer>
 
 <script type="module" src="account.js"></script>
+<script src="assistant.js" defer></script>
 </body>
 </html>

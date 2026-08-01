@@ -296,13 +296,24 @@ html[lang="ar"] .eyebrow{ font-family:var(--arabic); font-size:.8125rem; text-tr
   -webkit-backdrop-filter:blur(18px) saturate(1.4);
   border-bottom-color:var(--line);
 }
-.nav__inner{ display:flex; align-items:center; justify-content:space-between; gap:24px; height:74px; }
+.nav__inner{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:24px; height:74px; min-width:0;
+}
 
 /* Dark-mode logo: VISION keeps its azure, GUARD and the swoosh are white.
-   Sits directly on the page — no plate. See assets/logo-dark.png. */
-.brand{ display:inline-flex; align-items:center; flex:none; }
+   Sits directly on the page — no plate. See assets/logo-dark.png.
+
+   The logo is the one thing in this bar allowed to shrink, and the controls
+   are the one thing that never may. The bar was `flex:none` on both sides:
+   below about 340px the row was wider than the screen, space-between pushed
+   the overflow off the leading edge, and since <html> is overflow-x:clip the
+   burger ended up at left:-30px — rendered, but off the screen and
+   impossible to tap. Giving the brand the shrink and pinning .nav__end makes
+   that arrangement unreachable at any width. */
+.brand{ display:inline-flex; align-items:center; flex:0 1 auto; min-width:0; }
 .brand__logo{
-  width:auto; height:44px;
+  width:auto; height:44px; max-width:100%; object-fit:contain;
   transition:filter .4s var(--e-out), opacity .4s var(--e-out);
 }
 .brand:hover .brand__logo{ filter:drop-shadow(0 4px 18px rgba(var(--accent-rgb),.45)); }
@@ -322,7 +333,7 @@ html[lang="ar"] .eyebrow{ font-family:var(--arabic); font-size:.8125rem; text-tr
 .nav__links a:hover,.nav__links a.is-active{ color:var(--ink); }
 .nav__links a.is-active::before{ transform:scaleX(1); }
 
-.nav__end{ display:flex; align-items:center; gap:12px; }
+.nav__end{ display:flex; align-items:center; gap:12px; flex:none; }
 .navlink-account{
   font-size:.875rem; font-weight:500; color:var(--ink-2);
   white-space:nowrap; transition:color .3s ease;
@@ -365,11 +376,18 @@ html[lang="ar"] .eyebrow{ font-family:var(--arabic); font-size:.8125rem; text-tr
 .is-menu .burger span:nth-child(1){ transform:translate(-50%,4px) rotate(45deg); }
 .is-menu .burger span:nth-child(2){ transform:translate(-50%,-4px) rotate(-45deg); }
 
+/* The nav bar sits ABOVE this (z-index 100) so the burger stays reachable to
+   close it, which means the panel has to keep its own content out from under
+   it — hence the top padding rather than pure centring. It scrolls if the
+   five items plus the footer do not fit, which they do not on a short
+   landscape phone. */
 .menu{
   position:fixed; inset:0; z-index:99;
   background:rgba(var(--bg-rgb),.97);
   backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-  display:grid; align-content:center; padding:0 var(--gut);
+  display:grid; align-content:center;
+  padding:96px var(--gut) calc(32px + env(safe-area-inset-bottom));
+  overflow-y:auto; overscroll-behavior:contain;
   opacity:0; visibility:hidden;
   transition:opacity .45s var(--e-out), visibility .45s;
 }
@@ -402,20 +420,37 @@ html[lang="ar"] .eyebrow{ font-family:var(--arabic); font-size:.8125rem; text-tr
 .menu__foot a:hover{ color:var(--accent); }
 
 /* =========================================================================
-   HERO — scroll-scrubbed sensor field
+   HERO — one screen, still
+
+   This used to be a 185vh scrub track with a sticky stage and a canvas that
+   animated a sensor sweep, detection reticles and a focus frame against
+   scroll position. It is now a plain single-screen hero: the backdrop is a
+   static CSS ground plane and nothing on it reacts to the scroll wheel.
    ========================================================================= */
 .hero{ position:relative; }
-/* Scrub length. The canvas choreography is normalised to 0..1 across this
-   track, so shortening it speeds every hero beat proportionally — there is
-   no second number to keep in sync. Was 340vh, which took far too many
-   wheel turns to clear. */
-.hero__track{ height:185vh; }
 .hero__stage{
-  position:sticky; inset-block-start:0;
-  height:100vh; height:100svh;
+  position:relative;
+  min-height:100vh; min-height:100svh;
   overflow:hidden; display:grid; isolation:isolate;
 }
-.hero__canvas{ position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+
+/* The ground plane the canvas used to draw, as one static layer: an accent
+   bloom on the horizon, and a dot grid laid flat by a perspective tilt so it
+   recedes the way the painted field did. No animation, no JS. */
+.hero__field{
+  position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+  background:radial-gradient(120% 46% at 50% 62%, rgba(var(--accent-rgb),.13), transparent 72%);
+}
+.hero__field::after{
+  content:''; position:absolute;
+  inset-block-start:50%; inset-block-end:-34%; inset-inline:-50%;
+  background-image:radial-gradient(rgba(var(--canvas-ink-rgb),.5) 1px, transparent 1.6px);
+  background-size:30px 30px;
+  transform:perspective(340px) rotateX(62deg);
+  transform-origin:top center;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 2%, #000 30%, #000 70%, transparent 100%);
+  mask-image:linear-gradient(to bottom, transparent 2%, #000 30%, #000 70%, transparent 100%);
+}
 .hero__vignette{
   position:absolute; inset:0; z-index:1; pointer-events:none;
   background:
@@ -424,7 +459,7 @@ html[lang="ar"] .eyebrow{ font-family:var(--arabic); font-size:.8125rem; text-tr
 }
 .hero__content{
   position:relative; z-index:3; align-self:center; padding-top:40px;
-  max-width:min(100%,1180px); will-change:transform, opacity;
+  max-width:min(100%,1180px);
 }
 .hero__eyebrow{ margin-bottom:clamp(16px,2.2vw,28px); }
 .hero__title{ max-width:14ch; margin-bottom:clamp(20px,2.6vw,32px); }
@@ -443,15 +478,15 @@ html[lang="ar"] .eyebrow{ font-family:var(--arabic); font-size:.8125rem; text-tr
   text-transform:uppercase; color:var(--ink-4); margin-bottom:14px;
 }
 html[lang="ar"] .hud__title{ font-family:var(--arabic); font-size:.75rem; letter-spacing:normal; text-transform:none; }
+/* Every layer reads at once. These used to light up one by one as the scrub
+   advanced; with no scrub there is nothing to reveal them in sequence, and a
+   list that is three-quarters greyed out for no reason just looks broken. */
 .hud__list{ display:grid; gap:11px; }
 .hud__list li{
   display:flex; align-items:baseline; gap:10px;
-  font-size:.75rem; color:var(--ink-4);
-  transition:color .5s var(--e-out);
+  font-size:.75rem; color:var(--ink-2);
 }
-.hud__list li i{ font-family:var(--mono); font-style:normal; opacity:.7; }
-.hud__list li.is-on{ color:var(--ink-2); }
-.hud__list li.is-cur{ color:var(--accent); }
+.hud__list li i{ font-family:var(--mono); font-style:normal; color:var(--ink-4); }
 
 .hero__cue{
   position:absolute; z-index:3; inset-inline-start:50%; inset-block-end:24px;
@@ -517,18 +552,24 @@ html[lang="ar"] .hero__cue{ font-family:var(--arabic); letter-spacing:normal; fo
 
 /* catalogue photography is shot on white, so it gets a light plate too */
 .cat__plate{
-  display:grid; place-items:center;
+  position:relative;
   background:var(--plate);
-  aspect-ratio:16/10; padding:22px;
+  aspect-ratio:16/10;
   overflow:hidden;
 }
-/* height:auto is load-bearing. The width/height attributes on the <img> are
-   mapped to CSS as presentational hints, so width:auto alone overrides only
-   the width — the height stays pinned at the attribute value, the box grows
-   far taller than the plate, object-fit letterboxes the artwork outside the
-   visible area, and overflow:hidden crops it to nothing. */
+/* The image is positioned, not laid out in flow, and that is load-bearing.
+   The plate's height comes from aspect-ratio, and a percentage max-height on
+   an in-flow child does not resolve against a height derived that way — the
+   img kept its intrinsic size, outgrew the plate and got cropped top and
+   bottom, which is how a 500×500 camera shot lost its lens. An absolutely
+   positioned box resolves its percentages against the containing block's
+   *used* size, which is always definite, so the inset here is the padding
+   the plate used to carry and the artwork always fits inside it. */
 .cat__plate img{
-  width:auto; height:auto; max-height:100%; object-fit:contain;
+  position:absolute;
+  inset-block-start:22px; inset-inline-start:22px;
+  inline-size:calc(100% - 44px); block-size:calc(100% - 44px);
+  object-fit:contain;
   mix-blend-mode:multiply;
   transition:transform .8s var(--e-out);
 }
@@ -736,20 +777,122 @@ html[lang="ar"] .step__kicker{ font-family:var(--arabic); letter-spacing:normal;
 .totop:hover i{ transform:translateY(-3px); }
 
 /* =========================================================================
-   FLOATING WHATSAPP
+   FLOATING ASSISTANT
+
+   Replaced the WhatsApp fab that used to sit here. WhatsApp did not go away
+   — it is in the top strip, the contact section, the footer and inside this
+   panel — but the corner of the screen now answers the question instead of
+   forwarding it.
+
+   --cobar-h is how much room the shop's checkout bar is taking at the bottom
+   of the screen right now (0 when it is down, and always 0 on the landing
+   page, which has no such bar). Physical `bottom` rather than
+   inset-block-end: a var() inside calc() on the logical property does not
+   re-resolve when the variable changes, and the two are identical in a
+   horizontal writing mode anyway.
    ========================================================================= */
-.wafab{
-  position:fixed; z-index:95;
-  inset-inline-end:clamp(16px,3vw,30px); inset-block-end:clamp(16px,3vw,30px);
-  width:54px; height:54px; border-radius:50%;
+.vga{
+  position:fixed; z-index:97;
+  inset-inline-end:clamp(16px,3vw,30px);
+  bottom:calc(clamp(16px,3vw,30px) + var(--cobar-h, 0px));
+  transition:bottom .45s var(--e-out);
+}
+
+.vga__fab{
+  width:56px; height:56px; border-radius:50%;
   display:grid; place-items:center;
   background:var(--accent); color:var(--accent-ink);
   box-shadow:0 12px 32px -10px rgba(var(--accent-rgb),.7);
-  transform:translateY(90px) scale(.85); opacity:0;
-  transition:transform .6s var(--e-out), opacity .5s var(--e-out), box-shadow .4s;
+  transition:box-shadow .4s, transform .4s var(--e-out);
 }
-.wafab.is-on{ transform:none; opacity:1; }
-.wafab:hover{ box-shadow:0 16px 40px -10px rgba(var(--accent-rgb),.9); }
+.vga__fab:hover{ box-shadow:0 16px 40px -10px rgba(var(--accent-rgb),.9); transform:translateY(-2px); }
+.vga__i{ grid-area:1 / 1; transition:opacity .25s var(--e-out), transform .35s var(--e-out); }
+.vga__i--close{ opacity:0; transform:rotate(-90deg); }
+.vga.is-open .vga__i--open{ opacity:0; transform:rotate(90deg); }
+.vga.is-open .vga__i--close{ opacity:1; transform:none; }
+
+.vga__panel{
+  position:absolute;
+  inset-block-end:calc(100% + 14px);
+  inset-inline-end:0;
+  inline-size:min(370px, calc(100vw - 2 * clamp(16px,3vw,30px)));
+  block-size:min(74vh, 560px);
+  display:grid; grid-template-rows:auto 1fr auto auto auto;
+  background:var(--bg-1);
+  border:1px solid var(--line-2); border-radius:16px;
+  box-shadow:0 30px 70px -24px rgba(0,0,0,.7);
+  overflow:hidden;
+  opacity:0; transform:translateY(14px) scale(.97); transform-origin:100% 100%;
+  pointer-events:none;
+  transition:opacity .26s var(--e-out), transform .4s var(--e-out);
+}
+[dir="ltr"] .vga__panel{ transform-origin:0 100%; }
+.vga.is-open .vga__panel{ opacity:1; transform:none; pointer-events:auto; }
+
+.vga__head{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:15px 17px; border-bottom:1px solid var(--line); background:var(--bg-2);
+}
+.vga__titles{ display:grid; gap:3px; min-width:0; }
+.vga__title{ font-size:.9375rem; font-weight:700; letter-spacing:-.02em; }
+.vga__sub{ font-size:.6875rem; color:var(--ink-4); line-height:1.45; }
+.vga__new{
+  flex:none; font-size:.6875rem; color:var(--ink-3);
+  border:1px solid var(--line); border-radius:999px; padding:5px 11px;
+  transition:color .3s, border-color .3s;
+}
+.vga__new:hover{ color:var(--accent); border-color:rgba(var(--accent-rgb),.5); }
+
+.vga__log{
+  overflow-y:auto; overscroll-behavior:contain;
+  display:grid; align-content:start; gap:10px;
+  padding:16px 17px;
+}
+.vga__msg{
+  max-inline-size:88%;
+  padding:10px 13px; border-radius:13px;
+  font-size:.8125rem; line-height:1.65;
+  white-space:pre-wrap; overflow-wrap:anywhere;
+}
+.vga__msg--bot{ justify-self:start; background:var(--bg-2); border:1px solid var(--line); color:var(--ink-2); }
+.vga__msg--me{ justify-self:end; background:var(--accent-dim); border:1px solid rgba(var(--accent-rgb),.32); color:var(--ink); }
+.vga__msg.is-pending{ color:var(--ink-4); font-style:italic; }
+.vga__msg.is-err{ border-color:rgba(224,86,86,.45); color:#F0A8A8; }
+
+.vga__chips{ display:flex; flex-wrap:wrap; gap:7px; padding:0 17px 12px; }
+.vga__chips[hidden]{ display:none; }
+.vga__chip{
+  font-size:.75rem; color:var(--ink-3);
+  border:1px solid var(--line-2); border-radius:999px; padding:6px 12px;
+  transition:color .3s, border-color .3s, background .3s;
+}
+.vga__chip:hover{ color:var(--accent); border-color:rgba(var(--accent-rgb),.5); background:var(--accent-dim); }
+
+.vga__form{
+  display:flex; align-items:center; gap:9px;
+  padding:12px 13px; border-top:1px solid var(--line); background:var(--bg-2);
+}
+.vga__input{
+  flex:1 1 auto; min-width:0;
+  background:var(--bg); color:var(--ink);
+  border:1px solid var(--line-2); border-radius:999px;
+  padding:10px 15px; font-family:var(--sans); font-size:.8125rem;
+}
+.vga__input:focus{ outline:none; border-color:rgba(var(--accent-rgb),.6); }
+.vga__input:disabled{ opacity:.6; }
+.vga__send{
+  flex:none; width:38px; height:38px; border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--accent); color:var(--accent-ink);
+  transition:opacity .3s, transform .3s var(--e-out);
+}
+.vga__send:hover{ transform:scale(1.06); }
+.vga__send:disabled{ opacity:.45; transform:none; }
+[dir="rtl"] .vga__send svg{ transform:scaleX(-1); }
+
+.vga__foot{ padding:0 17px 13px; font-size:.6875rem; }
+.vga__foot a{ color:var(--ink-4); transition:color .3s; }
+.vga__foot a:hover{ color:var(--accent); }
 
 /* =========================================================================
    REVEALS (only when JS is present)
@@ -795,7 +938,6 @@ html[lang="ar"].js [data-split] .w{ padding-bottom:.26em; margin-bottom:-.26em; 
   .process__sticky{ position:static; }
   .stepviz{ width:min(100%,200px); }
   .trust__grid,.contact__grid{ grid-template-columns:1fr; }
-  .hero__track{ height:165vh; }
   .strip__hours{ display:none; }
 }
 
@@ -807,9 +949,24 @@ html[lang="ar"].js [data-split] .w{ padding-bottom:.26em; margin-bottom:-.26em; 
   .footer__grid{ grid-template-columns:1fr; }
   .footer__bar{ justify-content:flex-start; }
   .grain{ display:none; }
-  .hero__track{ height:150vh; }
   .brand__logo{ height:30px; padding:5px 10px; }
-  .nav__inner{ height:64px; }
+
+  /* The shop and account bars carry five controls here — language, theme,
+     account, cart, burger — and at 320px the old 42px targets plus 12px gaps
+     did not fit beside the logo. Trimmed so the row fits a 320px screen with
+     room to spare, and still comfortably above the 24px minimum tap size. */
+  .nav__inner{ height:64px; gap:10px; }
+  .nav__end{ gap:7px; }
+  /* keeps the contact strip on one line down to 320px instead of wrapping
+     to two and eating a whole row of the screen */
+  .strip{ font-size:.6875rem; }
+  .strip__in{ gap:6px 16px; }
+  .lang{ width:38px; height:34px; }
+  .theme{ width:34px; height:34px; }
+  .burger{ width:36px; height:36px; }
+  .burger span:nth-child(1){ top:14px; }
+  .burger span:nth-child(2){ bottom:14px; }
+  .menu{ padding-top:84px; }
 
   /* price rows stack: name over spec, price on its own line */
   .prod{ grid-template-columns:1fr auto; gap:4px 16px; }
@@ -830,8 +987,6 @@ html[lang="ar"].js [data-split] .w{ padding-bottom:.26em; margin-bottom:-.26em; 
   .boot{ display:none; }
   .js .reveal{ opacity:1; transform:none; }
   .js [data-split] .wi{ transform:none; }
-  .hero__track{ height:110vh; }
   .hero__cue{ display:none; }
   .step{ opacity:1; }
-  .wafab{ opacity:1; transform:none; }
 }

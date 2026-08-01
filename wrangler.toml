@@ -33,6 +33,21 @@ database_name = "visionguardegdata"
 database_id = "b538d110-35d6-43bd-b821-233c26e173bd"
 
 # --------------------------------------------------------------------------
+# Workers AI - powers the shop assistant at /api/assist.
+#
+# Nothing else to provision: the binding is the whole setup, and inference is
+# billed to this account in neurons (the Free plan includes a daily
+# allowance). `wrangler pages dev` proxies this to the real service, so local
+# development needs `npx wrangler login` once - without it the endpoint
+# answers 503 and the widget falls back to the WhatsApp number.
+#
+# The model is pinned in lib/assistant.js and can be overridden per
+# environment with an ASSISTANT_MODEL variable, no deploy required.
+# --------------------------------------------------------------------------
+[ai]
+binding = "AI"
+
+# --------------------------------------------------------------------------
 # Non-secret settings. Secrets (SESSION_SECRET, WhatsApp credentials) do NOT
 # belong here - put them in .dev.vars locally and in the Pages dashboard for
 # production. See .dev.vars.example.
