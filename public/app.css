@@ -102,13 +102,17 @@ html[lang="ar"] .resultline{ font-family:var(--arabic); font-size:.8125rem; lett
 
 /* Same light plate as the landing page: the catalogue is shot on white. */
 .pcard__plate{
-  display:grid; place-items:center;
-  background:var(--plate); aspect-ratio:4/3; padding:18px; overflow:hidden;
+  position:relative;
+  background:var(--plate); aspect-ratio:4/3; overflow:hidden;
 }
-/* See the note on .cat__plate img in styles.css — height:auto is required,
-   not cosmetic. */
+/* See the note on .cat__plate img in styles.css — the absolute positioning is
+   required, not cosmetic: it is the only way the artwork is guaranteed to fit
+   inside a plate whose height comes from aspect-ratio. */
 .pcard__plate img{
-  width:auto; height:auto; max-height:100%; object-fit:contain;
+  position:absolute;
+  inset-block-start:18px; inset-inline-start:18px;
+  inline-size:calc(100% - 36px); block-size:calc(100% - 36px);
+  object-fit:contain;
   mix-blend-mode:multiply; transition:transform .8s var(--e-out);
 }
 .pcard:hover .pcard__plate img{ transform:scale(1.045); }
@@ -406,6 +410,32 @@ input:disabled, textarea:disabled, select:disabled{ opacity:.55; cursor:not-allo
 .auth__alt button{ color:var(--accent); font-weight:600; padding:0; }
 .auth__alt button:hover{ text-decoration:underline; }
 
+/* ---------- Continue with Google ----------
+   The button itself is an iframe Google renders and owns; nothing in here
+   styles it, and nothing may — a hand-built look-alike that collects Google
+   credentials is a phishing pattern. This only positions it and draws the
+   divider between it and the email form.
+
+   The block starts hidden and account.js reveals it once Google's script has
+   actually loaded, so a blocked script leaves no empty gap. */
+.gauth{ display:grid; justify-items:center; gap:12px; margin-block:4px 20px; }
+.gauth[hidden]{ display:none; }
+.gauth__btn{ min-height:44px; display:grid; place-items:center; width:100%; }
+.gauth__note{ font-size:.6875rem; color:var(--ink-4); line-height:1.55; text-align:center; max-width:36ch; }
+.gauth__err{
+  width:100%; padding:11px 14px;
+  border:1px solid rgba(224,86,86,.4); border-radius:10px;
+  background:rgba(224,86,86,.08); color:#F0A8A8; font-size:.8125rem; line-height:1.55;
+}
+.gauth__err[hidden]{ display:none; }
+/* hairline with the label sitting in a gap in the middle of it */
+.gauth__or{
+  width:100%; display:flex; align-items:center; gap:12px;
+  font-size:.75rem; color:var(--ink-4);
+}
+.gauth__or::before,
+.gauth__or::after{ content:""; flex:1; height:1px; background:var(--line); }
+
 .pwhint{ font-size:.75rem; color:var(--ink-4); margin-top:-2px; }
 
 /* Staff hint: shown once the typed address is on the company domain, so an
@@ -539,11 +569,52 @@ table.att tr.is-today td{ background:rgba(var(--accent-rgb),.05); }
 .att__note{ font-size:.6875rem; color:var(--ink-4); white-space:normal; }
 
 /* =========================================================================
+   CHECKOUT BAR
+
+   Sits below the drawer and the scrim (104/105) so opening the cart covers
+   it, and above the WhatsApp fab's own stacking. While it is up it publishes
+   its own height as --cobar-h on <body>, and the two other things pinned to
+   the bottom of the screen — the fab and the toast — offset by that instead
+   of guessing a gap. Off, --cobar-h is 0 and they sit where they always did.
+   ========================================================================= */
+.cobar{
+  position:fixed; z-index:96;
+  inset-inline:0; inset-block-end:0;
+  padding-inline:clamp(12px,3vw,24px);
+  padding-block-end:calc(clamp(14px,2.4vw,22px) + env(safe-area-inset-bottom));
+  pointer-events:none;
+  opacity:0; transform:translateY(130%);
+  transition:opacity .3s var(--e-out), transform .5s var(--e-out);
+}
+.cobar.is-on{ opacity:1; transform:none; }
+.cobar.is-on .cobar__in{ pointer-events:auto; }
+/* the burger overlay (z-index 99) paints over it; do not peek through */
+.is-menu .cobar{ opacity:0; transform:translateY(130%); }
+
+.cobar__in{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  inline-size:min(100%, 560px); margin-inline:auto;
+  padding:11px 11px 11px 20px; border-radius:999px;
+  background:var(--bg-3); border:1px solid var(--line-2);
+  box-shadow:0 20px 46px -18px rgba(0,0,0,.65);
+}
+[dir="rtl"] .cobar__in{ padding:11px 20px 11px 11px; }
+
+.cobar__meta{ display:grid; gap:2px; min-width:0; }
+.cobar__count{ font-size:.8125rem; font-weight:600; color:var(--ink-2); }
+.cobar__total{ font-family:var(--latin); font-size:1rem; font-weight:700; color:var(--accent); white-space:nowrap; }
+.cobar__go{ flex:none; }
+
+/* =========================================================================
    TOAST
    ========================================================================= */
 .toast{
   position:fixed; z-index:130;
-  inset-block-end:clamp(84px,11vw,100px); inset-inline-start:50%;
+  /* physical `bottom`, not `inset-block-end`: a var() inside calc() on the
+     logical property does not re-resolve when --cobar-h changes. Same value
+     either way — the page is horizontal-tb in both languages. */
+  bottom:calc(clamp(84px,11vw,100px) + var(--cobar-h, 0px));
+  inset-inline-start:50%;
   transform:translate(-50%, 14px);
   max-width:min(92vw, 420px);
   padding:12px 20px; border-radius:999px;
@@ -580,7 +651,14 @@ table.att tr.is-today td{ background:rgba(var(--accent-rgb),.05); }
   .toolbar .field--sort{ min-width:0; flex:1 1 100%; }
   .cart{ width:100%; }
   .auth__body{ padding:22px 18px; }
-  .toast{ inset-block-end:76px; }
+  /* physical `bottom` for the same reason as the base rule, and it has to
+     keep the --cobar-h term: this declaration wins over the one above it. */
+  .toast{ bottom:calc(76px + var(--cobar-h, 0px)); }
+
+  /* Matches the trimmed nav controls in styles.css — five of these plus the
+     logo have to fit a 320px bar without pushing the burger off screen. */
+  .iconbtn{ width:34px; height:34px; }
+  .iconbtn__count{ inset-block-start:-4px; inset-inline-end:-4px; min-width:17px; height:17px; font-size:.625rem; }
 }
 
 /* =========================================================================

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="BNC connector">
+  <g fill="none" stroke="#12202A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <!-- bayonet shell -->
+    <path d="M196 156h150v138H196z"/>
+    <!-- knurling -->
+    <path d="M218 156v138M240 156v138M262 156v138M284 156v138M306 156v138M328 156v138" opacity=".3" stroke-width="5"/>
+    <!-- bayonet lugs -->
+    <path d="M196 186h-22v34h22M346 186h22v34h-22"/>
+    <!-- barrel toward the pin -->
+    <path d="M346 196h56v58h-56z"/>
+    <!-- centre pin -->
+    <path stroke="#1B9DD9" d="M402 225h44"/>
+    <!-- cable entry -->
+    <path d="M196 208h-64"/>
+    <path d="M132 190h-40v70h40z"/>
+    <path d="M92 225H54" opacity=".5"/>
+  </g>
+  <text x="300" y="372" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif"
+        font-size="40" font-weight="700" letter-spacing="4" fill="#12202A">BNC</text>
+</svg>

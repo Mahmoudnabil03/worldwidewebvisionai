@@ -18,6 +18,27 @@ SESSION_SECRET=""
 # PBKDF2_ITERATIONS="210000"
 
 # ---------------------------------------------------------------------------
+# Google sign-in — NOTHING TO SET HERE. Deliberately.
+#
+# There is no GOOGLE_CLIENT_SECRET in this project and there should never be
+# one. "Sign in with Google" is wired up with the ID-token flow: the browser
+# gets an assertion signed by Google, and functions/api/auth/google.js verifies
+# that signature against Google's published public keys. A client secret is
+# only needed for the authorization-code flow, which this does not use.
+#
+# The client ID is public — it ships in the page on every site that offers
+# Google sign-in — and lives in public/google-auth.js so the browser and the
+# server read the same value. The server compares it against each token's
+# `aud` claim, which is what stops a token minted for someone else's app from
+# working here. If you ever change the client ID, change it there, once.
+#
+# What DOES need doing, in the Google Cloud console for this client:
+#   Authorised JavaScript origins -> https://visionguardeg.com
+#                                    (and http://localhost:5173 for local dev)
+# No redirect URI is required for this flow.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # WhatsApp order notifications - ALL OPTIONAL.
 #
 # With none of this set, orders are still saved and the customer still gets a
