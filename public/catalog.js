@@ -28,10 +28,27 @@
    about a discount.
    ========================================================================= */
 
-/* Every image is a shot of the thing it sells. Rows still waiting on a photo
-   carry no `img` and fall back to their category picture — see imageFor().
-   That is deliberately visible rather than hidden behind generic stock art
-   of a model we do not stock. */
+/* Every row carries its own `img`; nothing relies on the category fallback in
+   imageFor() any more. Two rules were applied, in this order:
+
+   1. Never show a different KIND of thing, and never a different BRAND. The
+      fallback used to do both — coax rolls showed a power supply, memory
+      cards showed a hard drive, Imou and Tenda cameras showed a Skyworth.
+
+   2. Where a real photograph of the exact model was not available, the choice
+      was between a drawing and a photograph of something else. Commodity
+      parts with no brand to misrepresent — coax, Cat6, BNC and DC connectors,
+      junction box, rack, adaptor, memory cards — are line drawings (the .svg
+      files here). They are obviously drawings, which is the point: they
+      cannot be mistaken for a claim about a specific product.
+
+   Some images are legitimately shared. The three RG59 rolls are one cable at
+   three lengths; the WD Purple capacities are one drive with a different
+   number on the label. Sharing there is accurate, not lazy.
+
+   Two rows are still approximate and want a real photo when one exists:
+   Tenda CH9 (shows the CP3 — right brand, wrong model) and the Dahua 3MP IP
+   Pan-Tilt (shows a Dahua dome, not a pan-tilt). */
 /* `blurb` is the landing page's category-card copy. It lives here rather
    than in index.html for the same reason the prices do: the cards are
    rendered from this list, so adding a category adds a card, and there is no
@@ -87,7 +104,7 @@ export const CATEGORIES = [
   },
   {
     id: 'cable', ar: 'الأسلاك', en: 'Cable',
-    img: 'assets/products/psu-12v-10a.jpg',
+    img: 'assets/products/coax-rg59.svg',
     blurb: {
       ar: 'سلك كاميرات RG59 و RG60 بالبكرة، وسلك شبكة Cat6 للأنظمة اللي بتشتغل على IP.',
       en: 'RG59 and RG60 camera coax by the roll, and Cat6 network cable for IP systems.'
@@ -95,7 +112,7 @@ export const CATEGORIES = [
   },
   {
     id: 'accessory', ar: 'إكسسوارات وتركيبات', en: 'Accessories',
-    img: 'assets/products/psu-12v-20a.jpg',
+    img: 'assets/products/bnc-connector.svg',
     blurb: {
       ar: 'راك، محولات، علب توصيلات وجاكات BNC و DC — القطع الصغيرة اللي التركيب مش بيكمل من غيرها.',
       en: 'Rack, adaptors, junction boxes and BNC/DC connectors — the small parts an install does not finish without.'
@@ -171,6 +188,7 @@ export const PRODUCTS = [
     id: 'dahua-5mp-nv', cat: 'analog', brand: 'Dahua',
     name: 'Dahua 5MP HD Night Vision',
     ar: '٥ ميجابكسل · رؤية ليلية · داخلية وخارجية', en: '5MP · night vision · indoor and outdoor',
+    img: 'assets/products/dahua-5mp.jpg',
     price: 1440, was: 0
   },
   {
@@ -186,6 +204,7 @@ export const PRODUCTS = [
     id: 'dahua-ip-pt-3mp', cat: 'ip', brand: 'Dahua',
     name: 'Dahua 3MP IP Pan-Tilt',
     ar: '٣ ميجابكسل · متحركة · خارجية', en: '3MP · pan-tilt · outdoor',
+    img: 'assets/products/hac-hdw1800rp.webp',
     price: 4375, was: 0
   },
 
@@ -208,12 +227,14 @@ export const PRODUCTS = [
     id: 'imou-3mp-color', cat: 'wireless', brand: 'Imou',
     name: 'Imou 3MP Wi-Fi Full Colour',
     ar: '٣ ميجابكسل · ألوان ليلًا · داخلية', en: '3MP · full-colour night · indoor',
+    img: 'assets/products/imou-3mp.jpg',
     price: 1500, was: 0
   },
   {
     id: 'imou-5mp-color', cat: 'wireless', brand: 'Imou',
     name: 'Imou 5MP Wi-Fi Full Colour',
     ar: '٥ ميجابكسل · ألوان ليلًا · داخلية', en: '5MP · full-colour night · indoor',
+    img: 'assets/products/imou-5mp.jpg',
     price: 1875, was: 0
   },
   {
@@ -297,6 +318,7 @@ export const PRODUCTS = [
     id: 'tenda-ch9', cat: 'wireless', brand: 'Tenda',
     name: 'Tenda CH9 Wi-Fi Outdoor',
     ar: '٦ ميجابكسل · خارجية', en: '6MP · outdoor',
+    img: 'assets/products/tenda-cp3.jpg',
     price: 1815, was: 0
   },
 
@@ -384,12 +406,14 @@ export const PRODUCTS = [
     id: 'wd-purple-2tb', cat: 'storage', brand: 'WD',
     name: 'WD Purple 2TB Surveillance',
     ar: 'هارد ديسك · مخصص للعمل ٢٤/٧', en: 'Hard drive · 24/7 rated',
+    img: 'assets/products/wd-purple-1tb.jpg',
     price: 3750, was: 0
   },
   {
     id: 'wd-purple-4tb', cat: 'storage', brand: 'WD',
     name: 'WD Purple 4TB Surveillance',
     ar: 'هارد ديسك · مخصص للعمل ٢٤/٧', en: 'Hard drive · 24/7 rated',
+    img: 'assets/products/wd-purple-1tb.jpg',
     price: 5625, was: 0
   },
   {
@@ -410,12 +434,14 @@ export const PRODUCTS = [
     id: 'evo-64gb', cat: 'storage', brand: 'Samsung EVO',
     name: 'Samsung EVO 64GB',
     ar: 'كارت ذاكرة MicroSD / TF', en: 'MicroSD / TF card',
+    img: 'assets/products/microsd-64gb.svg',
     price: 500, was: 0
   },
   {
     id: 'evo-128gb', cat: 'storage', brand: 'Samsung EVO',
     name: 'Samsung EVO 128GB',
     ar: 'كارت ذاكرة MicroSD / TF', en: 'MicroSD / TF card',
+    img: 'assets/products/microsd-128gb.svg',
     price: 750, was: 0
   },
 
@@ -440,12 +466,14 @@ export const PRODUCTS = [
     id: 'psu-12v-30a', cat: 'power', brand: 'Professional Security',
     name: 'Power Supply 12V 30A',
     ar: '١٢ فولت · ٣٠ أمبير', en: '12V · 30A',
+    img: 'assets/products/psu-12v-20a.jpg',
     price: 375, was: 0
   },
   {
     id: 'psu-12v-40a', cat: 'power', brand: 'Professional Security',
     name: 'Power Supply 12V 40A',
     ar: '١٢ فولت · ٤٠ أمبير', en: '12V · 40A',
+    img: 'assets/products/psu-12v-20a.jpg',
     price: 440, was: 0
   },
 
@@ -454,42 +482,49 @@ export const PRODUCTS = [
     id: 'rg59-50m', cat: 'cable', brand: 'RG59',
     name: 'RG59 Coax 50m',
     ar: 'سلك كاميرات · ٥٠ متر', en: 'Camera coax · 50 m roll',
+    img: 'assets/products/coax-rg59.svg',
     price: 440, was: 0
   },
   {
     id: 'rg59-200m', cat: 'cable', brand: 'RG59',
     name: 'RG59 Coax 200m',
     ar: 'سلك كاميرات · ٢٠٠ متر', en: 'Camera coax · 200 m roll',
+    img: 'assets/products/coax-rg59.svg',
     price: 1625, was: 0
   },
   {
     id: 'rg59-300m', cat: 'cable', brand: 'RG59',
     name: 'RG59 Coax 300m',
     ar: 'سلك كاميرات · ٣٠٠ متر', en: 'Camera coax · 300 m roll',
+    img: 'assets/products/coax-rg59.svg',
     price: 2000, was: 0
   },
   {
     id: 'rg60-50m', cat: 'cable', brand: 'RG60',
     name: 'RG60 Coax 50m',
     ar: 'سلك كاميرات · ٥٠ متر', en: 'Camera coax · 50 m roll',
+    img: 'assets/products/coax-rg60.svg',
     price: 440, was: 0
   },
   {
     id: 'rg60-100m', cat: 'cable', brand: 'RG60',
     name: 'RG60 Coax 100m',
     ar: 'سلك كاميرات · ١٠٠ متر', en: 'Camera coax · 100 m roll',
+    img: 'assets/products/coax-rg60.svg',
     price: 750, was: 0
   },
   {
     id: 'rg60-300m', cat: 'cable', brand: 'RG60',
     name: 'RG60 Coax 300m',
     ar: 'سلك كاميرات · ٣٠٠ متر', en: 'Camera coax · 300 m roll',
+    img: 'assets/products/coax-rg60.svg',
     price: 2500, was: 0
   },
   {
     id: 'cat6-305m', cat: 'cable', brand: 'Premium Line',
     name: 'Premium Line Cat6 UTP 305m',
     ar: 'سلك شبكة Cat6 · ٣٠٥ متر · ٢٧ ج.م للمتر', en: 'Cat6 network cable · 305 m box · 27 EGP per metre',
+    img: 'assets/products/cat6-utp.svg',
     price: 8125, was: 0
   },
 
@@ -498,30 +533,35 @@ export const PRODUCTS = [
     id: 'rack-12u', cat: 'accessory', brand: 'APLUS',
     name: 'APLUS 12U Rack',
     ar: 'راك ١٢ يونت', en: '12U wall rack',
+    img: 'assets/products/rack-12u.svg',
     price: 2750, was: 0
   },
   {
     id: 'adaptor-12v-2a', cat: 'accessory', brand: 'Vision Guard',
     name: 'Adaptor 12V 2A',
     ar: 'محول ١٢ فولت · ٢ أمبير · أصلي', en: '12V · 2A · original',
+    img: 'assets/products/adaptor-12v-2a.svg',
     price: 75, was: 0
   },
   {
     id: 'junction-box', cat: 'accessory', brand: 'Vision Guard',
     name: 'Junction Box 10×10',
     ar: 'علبة توصيلات ١٠×١٠', en: 'Junction box · 10 × 10 cm',
+    img: 'assets/products/junction-box.svg',
     price: 25, was: 0
   },
   {
     id: 'connector-bnc', cat: 'accessory', brand: 'Vision Guard',
     name: 'BNC Connector',
     ar: 'جاك BNC', en: 'BNC connector',
+    img: 'assets/products/bnc-connector.svg',
     price: 10, was: 0
   },
   {
     id: 'connector-dc', cat: 'accessory', brand: 'Vision Guard',
     name: 'DC Connector',
     ar: 'جاك DC', en: 'DC power connector',
+    img: 'assets/products/dc-connector.svg',
     price: 5, was: 0
   }
 ];
