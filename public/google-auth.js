@@ -30,6 +30,8 @@ export const GOOGLE_CLIENT_ID =
 const GSI_SRC = 'https://accounts.google.com/gsi/client';
 
 let loading = null;
+let initialized = false;
+let credentialHandler = null;
 
 function loadGsi() {
   if (window.google && window.google.accounts && window.google.accounts.id) {
@@ -71,16 +73,28 @@ export async function mountGoogleButtons(targets, onCredential, opts) {
   }
 
   const gid = window.google.accounts.id;
-  gid.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: (res) => { if (res && res.credential) onCredential(res.credential); },
-    /* One Tap is deliberately off. It pops over the page uninvited, and on a
-       shop that mostly gets first-time visitors it reads as an interruption
-       rather than a convenience. The button is enough. */
-    auto_select: false,
-    cancel_on_tap_outside: true,
-    ux_mode: 'popup'
-  });
+
+  /* initialize() is global state, not per-button, and calling it again on
+     every language or theme switch made GSI warn that only the last instance
+     would be used. Do it once; re-render the buttons as often as we like.
+     The callback closes over the latest handler via `credentialHandler`, so
+     one initialization stays correct for the life of the page. */
+  credentialHandler = onCredential;
+  if (!initialized) {
+    initialized = true;
+    gid.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: (res) => {
+        if (res && res.credential && credentialHandler) credentialHandler(res.credential);
+      },
+      /* One Tap is deliberately off. It pops over the page uninvited, and on a
+         shop that mostly gets first-time visitors it reads as an interruption
+         rather than a convenience. The button is enough. */
+      auto_select: false,
+      cancel_on_tap_outside: true,
+      ux_mode: 'popup'
+    });
+  }
 
   const o = opts || {};
   nodes.forEach((node) => {

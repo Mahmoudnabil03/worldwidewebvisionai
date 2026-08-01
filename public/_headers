@@ -22,7 +22,17 @@
   # reason a look-alike must never be substituted. lh3.googleusercontent.com is
   # where profile pictures are served from. `frame-ancestors 'none'` is
   # untouched: other sites still cannot frame us.
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Kujm0/4azSdOPOSA6aaqqQwa4A5Ur08aglfQkpthXJo=' https://accounts.google.com; style-src 'self' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  # style-src-attr is called out separately and deliberately. Google Identity
+  # Services sizes its button with inline style="..." ATTRIBUTES on the nodes
+  # it injects into this page. Without this directive those attributes inherit
+  # style-src, which has no 'unsafe-inline', so they were stripped — the button
+  # lost its height and rendered as a 437px-tall Google logo.
+  #
+  # Naming the -attr variant keeps the relaxation to attributes only: style-src
+  # still governs <style> blocks and stylesheet URLs and still has no
+  # 'unsafe-inline', so injected <style> elements remain blocked. That is the
+  # narrowest thing that makes the button work.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Kujm0/4azSdOPOSA6aaqqQwa4A5Ur08aglfQkpthXJo=' https://accounts.google.com; style-src 'self' https://fonts.googleapis.com https://accounts.google.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
