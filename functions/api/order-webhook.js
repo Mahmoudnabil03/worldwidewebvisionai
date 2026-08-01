@@ -59,6 +59,48 @@ export async function onRequest(context) {
         headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }
       });
     }
+
+    /* Configuration report: ?diag=1 with the verify token.
+
+       This exists because "why did the WhatsApp alert not send" was, twice,
+       a question about which variables the DEPLOYMENT can see — not about
+       the code. Pages binds secrets at build time and wrangler.toml [vars]
+       do not always reach a Git-built Pages project, so the dashboard
+       showing a value is not evidence the running Function has it.
+
+       It reports presence, length and a masked prefix. Never a value: this
+       endpoint is public, and the verify token gating it is itself only a
+       shared secret, not an authorisation system. A length and first four
+       characters are enough to tell a Phone Number ID from a WABA ID, or a
+       token that was truncated on paste, without disclosing anything usable. */
+    if (url.searchParams.get('diag') === '1' && timingSafeEqual(token, expected)) {
+      const shape = (v) => {
+        if (typeof v !== 'string' || !v.trim()) return 'MISSING';
+        const s = v.trim();
+        return `set (len ${s.length}, starts "${s.slice(0, 4)}…")`;
+      };
+      return Response.json({
+        note: 'presence and shape only — no values are ever returned',
+        sending: {
+          WHATSAPP_TOKEN: shape(env.WHATSAPP_TOKEN || env.WHATSAPP_ACCESS_TOKEN),
+          WHATSAPP_PHONE_ID: shape(env.WHATSAPP_PHONE_ID || env.WHATSAPP_PHONE_NUMBER_ID),
+          WHATSAPP_TO: shape(env.WHATSAPP_TO || env.MERCHANT_WHATSAPP || env.MY_PHONE_NUMBER)
+        },
+        template: {
+          WHATSAPP_TEMPLATE: shape(env.WHATSAPP_TEMPLATE),
+          WHATSAPP_TEMPLATE_LANG: shape(env.WHATSAPP_TEMPLATE_LANG),
+          effect: (env.WHATSAPP_TEMPLATE || '').trim()
+            ? 'template will be used — deliverable outside the 24h window'
+            : 'NO TEMPLATE: plain text only, which fails with 131047 outside the 24h window'
+        },
+        webhook: { META_VERIFY_TOKEN: shape(env.META_VERIFY_TOKEN) },
+        otherVars: {
+          WORK_DAY_HOURS: shape(env.WORK_DAY_HOURS),
+          SHIPPING_FLAT: shape(env.SHIPPING_FLAT)
+        }
+      }, { status: 200, headers: { 'cache-control': 'no-store' } });
+    }
+
     return new Response('Forbidden', { status: 403 });
   }
 
