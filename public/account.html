@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>حسابي | Vision Guard</title>
 <meta name="description" content="سجّل الدخول أو أنشئ حساب Vision Guard لمتابعة طلباتك وتفضيلاتك.">
-<meta name="theme-color" content="#08090B">
+<meta name="theme-color" content="#F6F7F9">
 <meta name="robots" content="noindex, nofollow">
 
 <link rel="icon" href="assets/logo-trim.png">
@@ -14,17 +14,47 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap">
-<!-- ?v= is a cache buster, and it is load-bearing until the zone cache rule is
-     fixed. A Cache Rule on visionguardeg.com overrides the Cache-Control in
-     _headers with a 4-hour TTL, so a CSS change would otherwise take four
-     hours to reach anyone who had already visited. The HTML itself is
-     no-store, so a changed href here is picked up immediately. Bump V on any
-     CSS change, or better: set that rule to respect origin headers and drop
-     this entirely. -->
-<link rel="stylesheet" href="styles.css?v=2">
-<link rel="stylesheet" href="app.css?v=2">
+<!-- ?v= is a cache buster. Bump it on any CSS or JS change, on every page and
+     in every module import, together.
 
-<script>(function(d){var c=d.documentElement;c.className=c.className.replace('no-js','js');try{var t=localStorage.getItem('vg-theme');if(t==='light'||t==='dark'){c.setAttribute('data-theme',t);}}catch(e){}})(document);</script>
+     It is no longer propping up a broken zone setting. visionguardeg.com used
+     to carry a Browser Cache TTL of 14400 at the zone level, which rewrote the
+     Cache-Control from _headers before it reached anyone: app.css was declared
+     max-age=3600 and served as 14400, and catalog.js was declared 300 — five
+     minutes, because it carries PRICES — and served as four hours. That
+     setting is now "Respect Existing Headers", so _headers is authoritative
+     and those values arrive as written.
+
+     Keep bumping this anyway. A new URL is an unconditional edge miss, which
+     is what makes a deploy visible immediately rather than after the file TTL
+     expires — and a stale account.js talking to a changed API is a broken
+     sign-in, not a stale colour. Module imports do not inherit the query, so
+     the ?v= inside account.js/shop.js/page.js/product.js has to move with it.
+     The HTML itself revalidates every time, so a changed href here is picked
+     up on the next request. -->
+<link rel="stylesheet" href="styles.css?v=31">
+<link rel="stylesheet" href="app.css?v=31">
+
+<script>(function(d){var c=d.documentElement;c.className=c.className.replace('no-js','js');var t='light';try{var s=localStorage.getItem('vg-theme');if(s==='dark'||s==='light'){t=s;}}catch(e){}c.setAttribute('data-theme',t);})(document);</script>
+<!-- Meta Pixel. Loaded here too, so CompleteRegistration has somewhere to
+     fire when an account is created. Same loader, same public id; the ACCESS
+     TOKEN remains server-side only. See track.js for which events exist.
+
+     consent.js MUST stay ahead of pixel.js - see the longer note in
+     index.html.
+
+     The <noscript> beacon that used to sit here is removed. Its stated job
+     was twofold and only one half is lost: it fired a PageView for visitors
+     with JavaScript off - which is tracking nobody can be asked to consent
+     to, since the bar itself needs JavaScript - and it put the pixel id in
+     the served markup for Meta's "check events setup" crawler. That crawler
+     executes JavaScript as well as reading markup, and it is not in a
+     consent region, so it still sees the pixel load normally through
+     pixel.js. -->
+<script src="consent.js?v=31" defer></script>
+<script src="promo.js?v=31" defer></script>
+<script src="pixel.js?v=31" defer></script>
+<script src="track.js?v=31" defer></script>
 </head>
 <body>
 
@@ -34,12 +64,13 @@
 <header class="nav" id="nav">
   <div class="nav__inner shell">
     <a class="brand" href="index.html" aria-label="Vision Guard">
-      <img class="brand__logo" src="assets/logo-dark.png" alt="Vision Guard" width="322" height="190">
+      <img class="brand__logo" src="assets/logo-trim.png" alt="Vision Guard" width="322" height="190">
     </a>
 
     <nav class="nav__links" aria-label="Primary">
       <a href="index.html" data-en="Home">الرئيسية</a>
       <a href="shop.html" data-en="Shop">المتجر</a>
+      <a href="game.html" data-en="Planner">المخطّط</a>
       <a href="account.html" class="is-active" aria-current="page" data-en="Account">حسابي</a>
       <a href="index.html#contact" data-en="Contact">تواصل</a>
     </nav>
@@ -63,7 +94,7 @@
         </svg>
       </a>
       <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
-        <span></span><span></span>
+        <span></span><span></span><span></span>
       </button>
     </div>
   </div>
@@ -75,6 +106,7 @@
     <a href="shop.html"><i>02</i><span data-en="Shop">المتجر</span></a>
     <a href="account.html"><i>03</i><span data-en="Account">حسابي</span></a>
     <a href="index.html#contact"><i>04</i><span data-en="Contact">تواصل</span></a>
+    <a href="game.html"><i>05</i><span data-en="Planner">المخطّط</span></a>
     <div class="menu__foot">
       <a href="tel:+201260087815" dir="ltr">01260087815</a>
       <a href="https://wa.me/201105006854" target="_blank" rel="noopener" dir="ltr">WhatsApp 01105006854</a>
@@ -105,8 +137,16 @@
             <p class="auth__intro" data-en="Sign in to follow your orders. Vision Guard staff: use your company address to reach the attendance tab.">
               سجّل دخولك عشان تتابع طلباتك. لموظفي Vision Guard: استخدم إيميل الشركة عشان يظهر لك تبويب الحضور.
             </p>
-            <div class="gauth" hidden>
-              <div class="gauth__btn" id="googleLogin"></div>
+            <div class="gauth" hidden id="gauthLogin">
+              <button class="btn btn--ghost btn--wide gbtn" id="googleLogin" type="button">
+                <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">
+                  <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"/>
+                  <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.94v2.33A9 9 0 0 0 9 18Z"/>
+                  <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.94a9 9 0 0 0 0 8.1l3.03-2.33Z"/>
+                  <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .94 4.95l3.03 2.33C4.68 5.16 6.66 3.58 9 3.58Z"/>
+                </svg>
+                <span data-en="Continue with Google">المتابعة بجوجل</span>
+              </button>
               <p class="gauth__err" id="googleErr" role="alert" hidden></p>
               <p class="gauth__or"><span data-en="or with your email">أو بالإيميل</span></p>
             </div>
@@ -125,7 +165,11 @@
                 <span data-en="Staff address — the attendance tab will appear after you sign in.">إيميل موظف — تبويب الحضور هيظهر بعد تسجيل الدخول.</span>
               </div>
               <p class="formerr" id="loginErr" role="alert" hidden></p>
+              <p class="formok" id="loginOk" role="status" hidden></p>
               <button class="btn btn--wide" id="loginBtn" type="submit"><span data-en="Sign in">تسجيل الدخول</span></button>
+              <p class="auth__alt">
+                <button type="button" id="forgotBtn" data-en="Forgot your password?">نسيت كلمة السر؟</button>
+              </p>
             </form>
             <p class="auth__alt">
               <span data-en="No account yet?">لسه ماعندكش حساب؟</span>
@@ -138,8 +182,16 @@
             <p class="auth__intro" data-en="One account for your orders and your preferences. We ask for a mobile number because that is how we confirm deliveries.">
               حساب واحد لطلباتك وتفضيلاتك. بنطلب رقم الموبايل لأنه الطريقة اللي بنأكد بيها التوصيل.
             </p>
-            <div class="gauth" hidden>
-              <div class="gauth__btn" id="googleSignup"></div>
+            <div class="gauth" hidden id="gauthSignup">
+              <button class="btn btn--ghost btn--wide gbtn" id="googleSignup" type="button">
+                <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">
+                  <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"/>
+                  <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.94v2.33A9 9 0 0 0 9 18Z"/>
+                  <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.94a9 9 0 0 0 0 8.1l3.03-2.33Z"/>
+                  <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .94 4.95l3.03 2.33C4.68 5.16 6.66 3.58 9 3.58Z"/>
+                </svg>
+                <span data-en="Continue with Google">المتابعة بجوجل</span>
+              </button>
               <p class="gauth__note" data-en="Signing up with Google means accepting the terms of use and the privacy policy.">
                 التسجيل بجوجل معناه موافقتك على شروط الاستخدام وسياسة الخصوصية.
               </p>
@@ -172,8 +224,8 @@
               <div class="consents">
                 <label class="check">
                   <input type="checkbox" id="sTerms" required>
-                  <span data-en="I have read and accept the <a href=&quot;https://visionguardeg.com/pages/terms-and-conditions&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>terms of use</a> and the <a href=&quot;https://visionguardeg.com/pages/privacy-policy&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>privacy policy</a>. (Required)">
-                    قرأت وأوافق على <a href="https://visionguardeg.com/pages/terms-and-conditions" target="_blank" rel="noopener">شروط الاستخدام</a> و<a href="https://visionguardeg.com/pages/privacy-policy" target="_blank" rel="noopener">سياسة الخصوصية</a>. (مطلوب)
+                  <span data-en="I have read and accept the <a href=&quot;terms.html&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>terms of use</a> and the <a href=&quot;privacy.html&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>privacy policy</a>. (Required)">
+                    قرأت وأوافق على <a href="terms.html" target="_blank" rel="noopener">شروط الاستخدام</a> و<a href="privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a>. (مطلوب)
                   </span>
                 </label>
                 <label class="check">
@@ -216,7 +268,14 @@
           <p class="eyebrow"><span class="dot"></span><span data-en="Signed in">مسجّل دخول</span></p>
           <h1 class="dash__name" id="dashName"></h1>
           <p class="dash__email" id="dashEmail" dir="ltr"></p>
-          <p class="dash__badge" id="dashBadge" hidden><span data-en="Vision Guard staff">موظف Vision Guard</span></p>
+          <!-- Both variants live in the markup rather than being written by
+               JavaScript, so the data-en swap in site.js translates whichever
+               one is showing without account.js having to re-render it on a
+               language switch. account.js unhides exactly one. -->
+          <p class="dash__badge" id="dashBadge" hidden>
+            <span id="dashBadgeAdmin" hidden data-en="Admin account">حساب الإدارة</span>
+            <span id="dashBadgeStaff" hidden data-en="Employee account">حساب موظف</span>
+          </p>
         </div>
         <button class="btn btn--ghost btn--sm" id="logoutBtn" type="button"><span data-en="Sign out">تسجيل الخروج</span></button>
       </header>
@@ -224,6 +283,10 @@
       <div class="tabs" role="tablist">
         <button class="tab is-on" data-tab="orders" role="tab" aria-selected="true" data-en="My orders">طلباتي</button>
         <button class="tab" data-tab="attendance" id="tabAttendance" role="tab" aria-selected="false" hidden data-en="Attendance">الحضور</button>
+        <button class="tab" data-tab="team" id="tabTeam" role="tab" aria-selected="false" hidden data-en="Team">الفريق</button>
+        <button class="tab" data-tab="perf" id="tabPerf" role="tab" aria-selected="false" hidden data-en="Performance">الأداء</button>
+        <button class="tab" data-tab="manage" id="tabManage" role="tab" aria-selected="false" hidden data-en="Manage">الإدارة</button>
+        <button class="tab" data-tab="catalog" id="tabCatalog" role="tab" aria-selected="false" hidden data-en="Catalogue">الكتالوج</button>
         <button class="tab" data-tab="prefs" role="tab" aria-selected="false" data-en="Preferences">التفضيلات</button>
       </div>
 
@@ -286,6 +349,399 @@
         </div>
       </div>
 
+      <!-- ---- TEAM (administrators only) ----
+           Hidden for everyone else, but hiding it is presentation only:
+           /api/attendance/team re-checks on the server. -->
+      <div class="panel" id="panelTeam" role="tabpanel" hidden>
+        <div class="card">
+          <h2 class="card__title" data-en="The whole team, one day">الفريق كله في يوم واحد</h2>
+          <p class="card__note" id="teamNote"></p>
+
+          <div class="teambar">
+            <div class="field">
+              <label for="teamDate" data-en="Day">اليوم</label>
+              <input id="teamDate" type="date" dir="ltr">
+            </div>
+            <div class="field">
+              <label for="teamDays" data-en="Range behind it">الفترة اللي وراه</label>
+              <select id="teamDays">
+                <option value="1" data-en="That day only">اليوم ده بس</option>
+                <option value="7" selected data-en="7 days">٧ أيام</option>
+                <option value="14" data-en="14 days">١٤ يوم</option>
+                <option value="31" data-en="31 days">٣١ يوم</option>
+              </select>
+            </div>
+            <button class="btn btn--ghost btn--sm" id="teamToday" type="button" data-en="Today">النهارده</button>
+          </div>
+
+          <p class="verdict" id="teamVerdict" role="status"></p>
+          <p class="formerr" id="teamErr" role="alert" hidden></p>
+
+          <div class="stats" id="teamStats"></div>
+
+          <div class="tablewrap">
+            <table class="att">
+              <thead>
+                <tr>
+                  <th data-en="Employee">الموظف</th>
+                  <th data-en="In / Out">حضور / انصراف</th>
+                  <th data-en="Hours">الساعات</th>
+                  <th data-en="Vs target">مقارنة بالهدف</th>
+                  <th data-en="Status">الحالة</th>
+                </tr>
+              </thead>
+              <tbody id="teamRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" id="teamRangeTitle" data-en="Totals for the range">إجمالي الفترة</h2>
+          <div class="tablewrap">
+            <table class="att">
+              <thead>
+                <tr>
+                  <th data-en="Employee">الموظف</th>
+                  <th data-en="Days worked">أيام حضور</th>
+                  <th data-en="Total hours">إجمالي الساعات</th>
+                  <th data-en="Expected">المطلوب</th>
+                  <th data-en="Balance">الفرق</th>
+                  <th data-en="Short days">أيام ناقصة</th>
+                </tr>
+              </thead>
+              <tbody id="teamRange"></tbody>
+            </table>
+          </div>
+          <p class="card__note" id="teamFoot"></p>
+        </div>
+      </div>
+
+      <!-- ---- PERFORMANCE (administrators only) ---- -->
+      <div class="panel" id="panelPerf" role="tabpanel" hidden>
+        <div class="card">
+          <div class="teambar">
+            <div class="field">
+              <label for="perfDays" data-en="Period">الفترة</label>
+              <select id="perfDays">
+                <option value="7" data-en="Last 7 days">آخر ٧ أيام</option>
+                <option value="30" selected data-en="Last 30 days">آخر ٣٠ يوم</option>
+                <option value="90" data-en="Last 90 days">آخر ٩٠ يوم</option>
+                <option value="365" data-en="Last year">آخر سنة</option>
+              </select>
+            </div>
+          </div>
+          <p class="formerr" id="perfErr" role="alert" hidden></p>
+          <div class="stats" id="perfHeadline"></div>
+          <p class="card__note" id="perfCompare"></p>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" data-en="Orders per day">الطلبات كل يوم</h2>
+          <div class="spark" id="perfSpark"></div>
+          <p class="card__note" id="perfSparkNote"></p>
+        </div>
+
+        <div class="cards2">
+          <div class="card">
+            <h2 class="card__title" data-en="Traffic & visitors">الزيارات والزوار</h2>
+            <div class="stats" id="perfTraffic"></div>
+          </div>
+
+          <div class="card">
+            <h2 class="card__title" data-en="Marketing">التسويق</h2>
+            <div class="stats" id="perfMarketing"></div>
+            <div class="tablewrap" style="margin-top:12px">
+              <table class="att">
+                <thead><tr>
+                  <th data-en="Event">الحدث</th>
+                  <th data-en="Count">العدد</th>
+                </tr></thead>
+                <tbody id="perfEvents"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Per-product event counts: the same pixel events as the table
+             above, but broken down by which product each one was about, which
+             is the form you can actually act on. The columns are built by
+             account.js from whichever events actually occurred, so an event
+             added to track.js later shows up here without touching this
+             markup. -->
+        <div class="card">
+          <h2 class="card__title" data-en="Events by product">الأحداث حسب المنتج</h2>
+          <p class="card__note" data-en="What visitors did, per product, over the selected period. Views, cart adds, checkouts and purchases come from the pixel; a product only appears once it has at least one event.">
+            اللي الزوار عملوه، لكل منتج، خلال الفترة المختارة. المشاهدات والإضافة للسلة وبدء الدفع والشراء بتيجي من البيكسل، والمنتج مابيظهرش غير لما يبقى ليه حدث واحد على الأقل.
+          </p>
+          <div class="tablewrap" style="margin-top:12px">
+            <table class="att" id="perfProductEventsTable">
+              <thead><tr id="perfProductEventsHead"></tr></thead>
+              <tbody id="perfProductEvents"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="cards2">
+          <div class="card">
+            <h2 class="card__title" data-en="Best sellers">الأكثر مبيعًا</h2>
+            <div class="tablewrap">
+              <table class="att">
+                <thead><tr>
+                  <th data-en="Product">المنتج</th>
+                  <th data-en="Sold">اتباع</th>
+                  <th data-en="Value">القيمة</th>
+                </tr></thead>
+                <tbody id="perfProducts"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 class="card__title" data-en="Where orders come from">الطلبات جاية منين</h2>
+            <div class="tablewrap">
+              <table class="att">
+                <thead><tr>
+                  <th data-en="Governorate">المحافظة</th>
+                  <th data-en="Orders">الطلبات</th>
+                  <th data-en="Value">القيمة</th>
+                </tr></thead>
+                <tbody id="perfGovs"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" data-en="Order status">حالة الطلبات</h2>
+          <div class="stats" id="perfStatuses"></div>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" data-en="Health">الصحة</h2>
+          <p class="verdict" id="perfHealth" role="status"></p>
+          <div class="stats" id="perfSecondary"></div>
+          <p class="card__note" data-en="“Alerts not delivered” counts orders whose Telegram or WhatsApp notification failed. It should be zero — anything else means an order arrived and nobody was told.">
+            «تنبيهات ماوصلتش» بتعد الطلبات اللي فشل إشعار تليجرام أو واتساب بتاعها. المفروض تكون صفر — أي رقم تاني معناه إن طلب وصل ومحدش اتبلّغ بيه.
+          </p>
+        </div>
+      </div>
+
+      <!-- ---- MANAGE (administrators only) ----
+           Every button here calls /api/admin/manage, which re-checks that the
+           caller is an administrator. Hiding the tab is presentation only. -->
+      <div class="panel" id="panelManage" role="tabpanel" hidden>
+
+        <div class="card">
+          <h2 class="card__title" data-en="Orders">الطلبات</h2>
+          <div class="teambar">
+            <div class="field">
+              <label for="mOrderQ" data-en="Find an order">دوّر على طلب</label>
+              <input id="mOrderQ" type="search" dir="ltr" data-ph-en="Order number, name or phone" placeholder="رقم الطلب أو الاسم أو الموبايل">
+            </div>
+            <button class="btn btn--ghost btn--sm" id="mOrderRefresh" type="button" data-en="Refresh">تحديث</button>
+          </div>
+          <p class="formerr" id="mErr" role="alert" hidden></p>
+          <p class="formok" id="mOk" role="status" hidden></p>
+          <div class="tablewrap">
+            <table class="att">
+              <thead><tr>
+                <th data-en="Order">الطلب</th>
+                <th data-en="Customer">العميل</th>
+                <th data-en="Total">الإجمالي</th>
+                <th data-en="Status">الحالة</th>
+                <th data-en="Actions">إجراءات</th>
+              </tr></thead>
+              <tbody id="mOrders"></tbody>
+            </table>
+          </div>
+          <p class="card__note" data-en="Changing the status is immediate and reversible. Deleting an order removes it from your commercial and tax records permanently — cancel it instead unless it is a test row.">
+            تغيير الحالة بيحصل فورًا وممكن ترجع فيه. حذف الطلب بيشيله نهائيًا من سجلاتك التجارية والضريبية — الأفضل تلغيه بدل ما تحذفه، إلا لو كان طلب تجريبي.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" data-en="Add a staff account">إضافة حساب موظف</h2>
+          <form id="mCreateForm" novalidate>
+            <div class="frow">
+              <div class="field">
+                <label for="mNewName" data-en="Full name">الاسم بالكامل</label>
+                <input id="mNewName" maxlength="120" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="mNewEmail" data-en="Company email">إيميل الشركة</label>
+                <input id="mNewEmail" type="email" dir="ltr" maxlength="254" autocomplete="off" placeholder="name@visionguardeg.com">
+              </div>
+            </div>
+            <div class="field">
+              <label for="mNewPhone" data-en="Mobile (optional)">الموبايل (اختياري)</label>
+              <input id="mNewPhone" inputmode="tel" dir="ltr" maxlength="20" placeholder="01012345678">
+            </div>
+            <p class="formerr" id="mCreateErr" role="alert" hidden></p>
+            <button class="btn" id="mCreateBtn" type="submit"><span data-en="Create account">اعمل الحساب</span></button>
+            <p class="card__note" data-en="Only @visionguardeg.com addresses. They receive an email to set their own password — we never see it.">
+              إيميلات @visionguardeg.com بس. هتوصلهم رسالة عشان يحطوا كلمة السر بنفسهم — إحنا عمرنا ما بنشوفها.
+            </p>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" data-en="Set employee password">تغيير كلمة سر الموظف</h2>
+          <form id="mPasswordForm" novalidate>
+            <div class="frow">
+              <div class="field">
+                <label for="mSetEmail" data-en="Company email">الإيميل</label>
+                <input id="mSetEmail" type="email" dir="ltr" maxlength="254" placeholder="name@visionguardeg.com">
+              </div>
+              <div class="field">
+                <label for="mSetPassword" data-en="New password">كلمة السر الجديدة</label>
+                <input id="mSetPassword" type="password" dir="ltr" maxlength="200" autocomplete="new-password">
+              </div>
+            </div>
+            <p class="formerr" id="mPasswordErr" role="alert" hidden></p>
+            <p class="formok" id="mPasswordOk" role="status" hidden></p>
+            <button class="btn" id="mPasswordBtn" type="submit"><span data-en="Update password">تحديث كلمة السر</span></button>
+            <p class="card__note" data-en="This updates the employee's local sign-in password for the dashboard. If they use Firebase only, a reset email remains the safe fallback.">
+              ده بيحدّث كلمة سر تسجيل الدخول المحلية للموظف في لوحة الإدارة. لو الموظف بيتسجل عبر Firebase بس، الرسالة لإعادة التعيين لسه هي البديل الآمن.
+            </p>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title" data-en="People">الحسابات</h2>
+          <div class="teambar">
+            <div class="field">
+              <label for="mUserQ" data-en="Find a person">دوّر على حساب</label>
+              <input id="mUserQ" type="search" dir="ltr" data-ph-en="Name or email" placeholder="الاسم أو الإيميل">
+            </div>
+          </div>
+          <div class="tablewrap">
+            <table class="att">
+              <thead><tr>
+                <th data-en="Name">الاسم</th>
+                <th data-en="Role">الصفة</th>
+                <th data-en="Last seen">آخر دخول</th>
+                <th data-en="Actions">إجراءات</th>
+              </tr></thead>
+              <tbody id="mUsers"></tbody>
+            </table>
+          </div>
+          <p class="card__note" data-en="Terminating an account deletes the person and their attendance, and anonymises their orders — the orders themselves are kept, because you have to be able to account for money you took. Administrators cannot be terminated here.">
+            إنهاء الحساب بيمسح الشخص وسجل حضوره، وبيخفي بياناته من الطلبات — والطلبات نفسها بتفضل، لأنك لازم تقدر تحاسب على فلوس استلمتها. وحسابات الإدارة مش ممكن تتمسح من هنا.
+          </p>
+        </div>
+      </div>
+
+      <!-- ---- CATALOGUE (administrators only) ---- -->
+      <div class="panel" id="panelCatalog" role="tabpanel" hidden>
+
+        <div class="card">
+          <p class="verdict" id="cNotice"></p>
+          <div class="teambar">
+            <div class="field">
+              <label for="cQ" data-en="Find a product">دوّر على منتج</label>
+              <input id="cQ" type="search" dir="ltr" data-ph-en="Name, id or brand" placeholder="الاسم أو الكود أو الماركة">
+            </div>
+            <button class="btn btn--sm" id="cNew" type="button" data-en="Add a product">أضف منتج</button>
+            <button class="btn btn--ghost btn--sm" id="cRefresh" type="button" data-en="Refresh">تحديث</button>
+          </div>
+          <p class="formerr" id="cErr" role="alert" hidden></p>
+          <p class="formok" id="cOk" role="status" hidden></p>
+          <div class="tablewrap">
+            <table class="att">
+              <thead><tr>
+                <th data-en="Image">الصورة</th>
+                <th data-en="Product">المنتج</th>
+                <th data-en="Category">القسم</th>
+                <th data-en="Price">السعر</th>
+                <th data-en="In shop">في المتجر</th>
+                <th data-en="Actions">إجراءات</th>
+              </tr></thead>
+              <tbody id="cRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" id="cEditorCard" hidden>
+          <h2 class="card__title" id="cEditorTitle" data-en="Edit product">تعديل منتج</h2>
+          <form id="cForm" novalidate>
+            <div class="frow">
+              <div class="field">
+                <label for="cId" data-en="Code (id)">الكود (id)</label>
+                <input id="cId" dir="ltr" maxlength="64" placeholder="unv-2mp">
+                <p class="pwhint" data-en="Lower-case letters, numbers and hyphens. Cannot be changed later — it identifies the product in past orders.">حروف صغيرة وأرقام وشرطات. مش هينفع يتغير بعدين — بيحدد المنتج في الطلبات القديمة.</p>
+              </div>
+              <div class="field">
+                <label for="cCat" data-en="Category">القسم</label>
+                <select id="cCat"></select>
+              </div>
+            </div>
+            <div class="frow">
+              <div class="field">
+                <label for="cName" data-en="Name">الاسم</label>
+                <input id="cName" maxlength="120">
+              </div>
+              <div class="field">
+                <label for="cBrand" data-en="Brand">الماركة</label>
+                <input id="cBrand" maxlength="60">
+              </div>
+            </div>
+            <div class="frow">
+              <div class="field">
+                <label for="cPrice" data-en="Price (EGP)">السعر (ج.م)</label>
+                <input id="cPrice" inputmode="numeric" dir="ltr" maxlength="9">
+              </div>
+              <div class="field">
+                <label for="cWas" data-en="Before price (0 = no discount)">السعر قبل الخصم (٠ = مافيش خصم)</label>
+                <input id="cWas" inputmode="numeric" dir="ltr" maxlength="9">
+              </div>
+            </div>
+            <div class="frow">
+              <div class="field">
+                <label for="cAr" data-en="Arabic spec line">وصف مختصر بالعربي</label>
+                <input id="cAr" maxlength="200">
+              </div>
+              <div class="field">
+                <label for="cEn" data-en="English spec line">وصف مختصر بالإنجليزي</label>
+                <input id="cEn" dir="ltr" maxlength="200">
+              </div>
+            </div>
+            <div class="field">
+              <label for="cImgFile" data-en="Product image (saved in the shop database)">صورة المنتج (تُحفظ في قاعدة المتجر)</label>
+              <!-- The native file input is kept in the DOM and driven normally
+                   — it is still the thing that holds the file and still what
+                   the form reads. It is only visually replaced, because the
+                   button INSIDE it is drawn by the browser and its label
+                   ("Choose File") cannot be translated by any means CSS or
+                   JavaScript can reach. On an Arabic page that is the one
+                   control that stays in English.
+
+                   A <label for> is a real, keyboard-accessible trigger for the
+                   input it names, so nothing about focus, tabbing or screen
+                   readers is lost by clicking through it instead. -->
+              <div class="filefield">
+                <input id="cImgFile" type="file" accept="image/*" class="filefield__input">
+                <label class="btn btn--sm filefield__btn" for="cImgFile" data-en="Choose image">اختار صورة</label>
+                <span class="filefield__name" id="cImgName"></span>
+              </div>
+              <input id="cImgHidden" type="hidden">
+              <div class="teambar" style="margin-top:8px; margin-bottom:0">
+                <button class="btn btn--ghost btn--sm" id="cImgRemove" type="button" data-en="Remove image">احذف الصورة</button>
+              </div>
+              <img id="cImgPreview" alt="Product preview" hidden style="margin-top:12px; max-height:180px; border-radius:12px; object-fit:contain; background:var(--bg-1); border:1px solid var(--line-2);">
+            </div>
+            <label class="check">
+              <input type="checkbox" id="cActive" checked>
+              <span data-en="Show this product in the shop">اعرض المنتج ده في المتجر</span>
+            </label>
+            <p class="formerr" id="cFormErr" role="alert" hidden></p>
+            <div class="teambar">
+              <button class="btn" id="cSave" type="submit"><span data-en="Save">احفظ</span></button>
+              <button class="btn btn--ghost btn--sm" id="cCancel" type="button" data-en="Cancel">إلغاء</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <!-- ---- PREFERENCES ---- -->
       <div class="panel" id="panelPrefs" role="tabpanel" hidden>
         <div class="card">
@@ -342,13 +798,15 @@
 <footer class="footer">
   <div class="shell">
     <div class="footer__bar" style="border-top:0; margin-top:0">
-      <p>&copy; <span id="year">2026</span> Vision Guard. <span data-en="All rights reserved.">جميع الحقوق محفوظة.</span></p>
+      <p>&copy; <span id="year">2026</span> Vision Guard. <span data-en="All rights reserved.">جميع الحقوق محفوظة.</span>
+        &nbsp;·&nbsp; <a href="privacy.html" data-en="Privacy policy">سياسة الخصوصية</a>
+        &nbsp;·&nbsp; <a href="privacy.html#cookies" data-consent="open" data-en="Cookie settings">إعدادات الكوكيز</a></p>
       <a class="totop" href="index.html"><span data-en="Back to the site">رجوع للموقع</span> <i aria-hidden="true">←</i></a>
     </div>
   </div>
 </footer>
 
-<script type="module" src="account.js"></script>
-<script src="assistant.js" defer></script>
+<script type="module" src="account.js?v=31"></script>
+<script src="assistant.js?v=31" defer></script>
 </body>
 </html>

@@ -8,5 +8,5 @@ import { currentUser, publicUser } from '../../../lib/auth.js';
 export const onRequestGet = handle(async (context) => {
   const d1 = await db(context.env);
   const user = await currentUser(context, d1);
-  return json({ ok: true, user: user ? publicUser(user) : null });
+  return json({ ok: true, user: user ? publicUser(user, context.env) : null });
 });

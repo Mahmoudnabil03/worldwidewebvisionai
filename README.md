@@ -7,7 +7,8 @@ Arabic (RTL, default) / English (LTR), dark by default with a full light theme.
 | --- | --- |
 | `/` | The marketing page — scroll-scrubbed hero, categories, price list. |
 | `/shop` | Filterable catalogue, cart, checkout. Orders land in the database and push a WhatsApp notification to the shop. |
-| `/account` | Sign in / sign up with separate consent boxes, order history, preferences, and an attendance tab for `@visionguardeg.com` addresses. |
+| `/account` | Sign in / sign up with separate consent boxes, order history, preferences, an attendance tab for `@visionguardeg.com` addresses, and a team timesheet for administrators. |
+| `/privacy` | The privacy policy, in both languages. Linked from every footer and from each consent box. |
 
 **No build step and no front-end framework.** The pages are hand-written HTML,
 CSS and ES modules. The back end is Cloudflare Pages Functions over a D1
@@ -58,9 +59,9 @@ side so they never sit under the headline.
 
 ```
 public/                     <- served verbatim. Everything here is public.
-  index.html  shop.html  account.html
+  index.html  shop.html  account.html  privacy.html
   styles.css  app.css
-  main.js  site.js  shop.js  account.js
+  main.js  site.js  shop.js  account.js  page.js
   catalog.js                <- products + prices. Imported by BOTH sides.
   _headers                  <- Cloudflare Pages security + caching rules
   assets/
@@ -69,9 +70,10 @@ functions/                  <- compiled into Pages Functions, served at /api/*
     catalog.js  orders.js  newsletter.js
     auth/       signup.js  login.js  logout.js  me.js
     account/    preferences.js
-    attendance/ index.js   clock.js
+    attendance/ index.js   clock.js   team.js
 lib/                        <- server-only helpers. NOT served.
   util.js  db.js  auth.js  orders.js  attendance.js  whatsapp.js
+scripts/create-admin.mjs    <- creates the one administrator account
 schema.sql                  <- D1 tables (also applied automatically)
 brand/logo-original.png     <- pristine source, kept out of the deploy
 wrangler.toml               <- Pages project config + D1 binding
@@ -82,7 +84,8 @@ wrangler.toml               <- Pages project config + D1 binding
 | --- | --- |
 | `public/index.html` | Marketing page. Arabic inline, English in `data-en`. |
 | `public/shop.html` `shop.js` | Catalogue, cart, checkout, confirmation. |
-| `public/account.html` `account.js` | Auth, orders, consent preferences, attendance. |
+| `public/account.html` `account.js` | Auth, orders, consent preferences, attendance, team timesheet. |
+| `public/privacy.html` `page.js` | The privacy policy. `page.js` is the whole script for it — one line, because the CSP allows only the one hashed inline block every page shares. |
 | `public/catalog.js` | **The prices.** One module, read by the browser *and* by the order endpoint. |
 | `public/styles.css` | Tokens, both themes, layout, RTL, responsive, reduced-motion. |
 | `public/app.css` | Shop and account surfaces only. The landing page never loads it. |
@@ -506,11 +509,12 @@ details and the internal summary — is not returned to the browser at all.
 
 ---
 
-## Orders on WhatsApp (back office)
+## Order alerts (back office)
 
-When an order is written, a summary is pushed to the shop's own WhatsApp number.
-It is Arabic-first and ordered so the top two lines are what you need on a lock
-screen: what it is, and its number.
+When an order is written, a summary is pushed to the shop — by default to a
+Telegram bot, with the WhatsApp providers still supported. It is Arabic-first
+and ordered so the top two lines are what you need on a lock screen: what it
+is, and its number.
 
 **It cannot delay or break an order.** The sequence is validate → re-price →
 write to D1 → respond to the customer → *then* notify, via `waitUntil`. A dead
@@ -518,11 +522,12 @@ token, an expired 24-hour window or a provider outage costs you the alert, not
 the order. The outcome is recorded on the order row (`notified`, `notify_error`)
 so failures are visible instead of silent.
 
-Four providers are supported; the first one whose credentials you set wins, or
-force one with `WHATSAPP_PROVIDER`. All of them are optional.
+Five providers are supported; the first one whose credentials you set wins, or
+force one with `NOTIFY_PROVIDER`. All of them are optional.
 
 | Provider | Set | Notes |
 | --- | --- | --- |
+| `telegram` | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | **Recommended, and it wins over the rest when its token is set.** Free, official, no template approval and no sending window — the whole multi-line Arabic summary arrives as written. |
 | `meta` | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` | Official Cloud API, free tier. Business-initiated messages outside a 24-hour window **must** use an approved template — set `WHATSAPP_TEMPLATE` to a template whose body is a single `{{1}}`. |
 | `ultramsg` | `ULTRAMSG_INSTANCE`, `ULTRAMSG_TOKEN` | Bridges a normal WhatsApp account. No template approval, no 24-hour rule. Paid, and not Meta-sanctioned. |
 | `twilio` | `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_FROM` | Same template rules as Meta. |
@@ -531,6 +536,31 @@ force one with `WHATSAPP_PROVIDER`. All of them are optional.
 **With none of them set, orders are still taken and stored** — you just have to
 read them out of the database (`npm run db:orders`) instead of getting a push.
 Set one before launch, or you will not know an order arrived.
+
+### Setting up the Telegram bot
+
+1. Message **@BotFather**, send `/newbot`, and copy the token it hands back —
+   it looks like `8961198092:AA…`.
+2. Open your new bot and **send it any message**. A bot cannot start a
+   conversation with you, so without this it has nowhere to post. For a group
+   or channel, add the bot to it instead.
+3. Read the chat id:
+   ```bash
+   curl "https://api.telegram.org/bot<TOKEN>/getUpdates"
+   ```
+   Take `result[].message.chat.id` — your own user id for a direct message, a
+   negative id like `-1001234567890` for a group.
+4. Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` as **encrypted secrets**
+   (Workers & Pages → visionguard → Settings → Variables and Secrets), or in
+   `.dev.vars` locally.
+
+Leaving `TELEGRAM_CHAT_ID` unset still works — `lib/whatsapp.js` falls back to
+the most recent chat in `getUpdates`. That is a convenience, not the intended
+setup: `getUpdates` only reaches back 24 hours and returns nothing at all once
+a webhook is registered on the bot.
+
+The token is a credential — anyone who has it controls the bot. Keep it out of
+`wrangler.toml` and out of commits, and `/revoke` it in @BotFather if it leaks.
 
 ---
 
@@ -554,6 +584,197 @@ answers identically whether or not the address was already on the list, so it
 cannot be used to test who is subscribed.
 
 Export the list with `npm run db:newsletter`.
+
+### Meta Pixel events
+
+Pixel **visionguardeg**, id `2037293923502315`. `public/pixel.js` loads it and
+fires PageView; `public/track.js` owns everything else and is the only place
+the event vocabulary lives.
+
+**None of it runs without consent.** `public/consent.js` is the switch, and it
+must load before `pixel.js` on every page — both are `defer`, so document order
+is execution order, and `pixel.js` refuses to load at all if `window.vgConsent`
+is not there yet. Which regime a visitor gets is decided per visitor by
+`GET /api/geo` from Cloudflare's `cf-ipcountry`:
+
+| Regime | Where | Behaviour |
+| --- | --- | --- |
+| `optin` | EU, EEA, UK, Switzerland, and unknown/Tor | `fbevents.js` is not requested until **Accept**. Reject means no pixel, no `/api/capi`, and no server-side Purchase relay. |
+| `notice` | everywhere else, Egypt included | The pixel runs as it always has. The bar explains it and offers the same off switch. |
+
+Three consequences worth knowing before you debug a "missing" event:
+
+- **Returning visitors cost nothing.** A stored decision is applied from
+  `localStorage` synchronously, so there is no bar and no `/api/geo` call. The
+  lookup happens on a first visit only, and is cached in `sessionStorage` for
+  the rest of the session.
+- **The server-side Purchase relay is gated too.** `public/shop.js` sends
+  `adConsent` with the order and `functions/api/orders.js` skips
+  `sendMetaPurchaseEvent` unless it is `true`. A missing field counts as *no* —
+  that path does not go through the browser, so nothing the browser blocks
+  could otherwise stop it, and Reject would be a lie.
+- **The `<noscript>` beacons are gone.** They fired a tracking request from the
+  markup, ahead of any consent, for visitors who by definition could not be
+  shown a bar. The Conversions API already covers the visitors the browser
+  pixel misses.
+
+"Cookie settings" in every footer reopens the choice — anything with
+`data-consent="open"` does, delegated. Withdrawing also clears `_fbp` and
+`_fbc`. Section 6 of `public/privacy.html` describes all of this to the
+customer and is anchored at `#cookies`; keep the two in step.
+
+**No vendor names in customer-facing copy — this is deliberate, do not "fix"
+it.** The bar and the privacy policy say *"we measure how well our ads work"*
+and never say Meta, Facebook, Instagram, "pixel", `_fbp`, or SHA-256. Naming
+the plumbing on a shopfront tells a customer nothing they can act on and reads
+as something to be suspicious of, which is the opposite of what a consent
+notice is for. It costs nothing legally either: GDPR Art. 13(1)(e) asks for
+the recipients **"or categories of recipients"**, so *"advertising and
+measurement providers — the social platforms we advertise on"* is a complete
+disclosure on its own. The vendor is named only where it has to be — in the
+code, in `wrangler.toml`, and in this file.
+
+| Event | Fires when | Carries |
+| --- | --- | --- |
+| `PageView` | every page | — |
+| `ViewContent` | a category listing is opened, including via `?cat=` from the landing page | `content_category`, the ids in that category |
+| `Search` | catalogue search, debounced, 3+ characters, once per distinct term | `search_string` |
+| `AddToCart` | a unit is added, by button or by the `+` stepper | product id, quantity, price, value |
+| `InitiateCheckout` | the checkout view opens, from either entry point | full cart contents, `num_items`, value |
+| `AddPaymentInfo` | a payment method is chosen, once per method | method, cart, value |
+| `Purchase` | the order is confirmed | contents, value, **`eventID` = order number** |
+| `CompleteRegistration` | an account is actually created (not on sign-in) | method (`email` / `google`) |
+| `Lead` | someone opts into the mailing list, at checkout or sign-up | source |
+| `Contact` | a phone, WhatsApp or email link is used, once per type per page | which kind |
+
+**Purchase is deduplicated, and it was not before.** The event is sent twice
+on purpose — from the browser, and from the server through the Conversions
+API, because the server copy survives ad blockers and Safari. Meta collapses
+the pair into one conversion **only when both carry the same `event_id`**, and
+neither copy had one: every order was counted as two purchases at twice the
+revenue, with nothing anywhere reporting it, because both events are
+individually valid. Both now send the order number.
+
+**Nine standard events are deliberately absent.** There is no wishlist,
+nothing to donate to, no appointments, no free trial, no paid subscription, no
+application to submit, no product configurator and no branch finder — so
+`AddToWishlist`, `Donate`, `Schedule`, `StartTrial`, `Subscribe`,
+`SubmitApplication`, `CustomizeProduct` and `FindLocation` would all be
+fiction. Firing events that do not correspond to something a customer really
+did trains ad delivery on noise and makes the funnel in Ads Manager lie.
+
+Two mappings worth knowing, because neither is literal:
+
+- **`ViewContent` is a category, not a product.** This shop has no per-product
+  page, and firing one event per card as it scrolls past would bury the real
+  signal. `content_type` is `product_group` so the shape does not claim
+  otherwise.
+- **`AddPaymentInfo` is choosing cash-on-delivery or transfer.** No card
+  details are entered on this site at all; the event marks the same funnel
+  step.
+
+The pixel now also loads on `/account`, which it did not before, so
+`CompleteRegistration` has somewhere to fire. The privacy policy lists every
+event by name.
+
+### Sign-in: Firebase Auth holds the credential, D1 holds the person
+
+Firebase Auth is the credential authority — the password, the reset email, the
+Google provider, and the rate limiting on all three. It is **not** the source
+of truth for who you are to this shop: the role, the staff flag, the consents,
+the orders and the attendance record all live in D1 keyed by `users.id`, and
+none of them means anything to Firebase.
+
+The join is one endpoint. The browser signs in with Firebase, gets an ID
+token, and posts it to `/api/auth/firebase`, which verifies the signature
+server-side and mints this site's own session cookie. Everything downstream —
+orders, preferences, attendance, the team timesheet — reads that cookie
+exactly as before and never learns Firebase was involved.
+
+**The check that matters** is the audience. Anyone can create a Firebase
+project and mint a token claiming any email address; `lib/firebase.js` rejects
+any token whose `aud` is not this project. Leave that check out and the whole
+thing is decorative.
+
+**The linking rules** in `functions/api/auth/firebase.js` are the rest of the
+security, and the middle one is the one to understand:
+
+| Situation | What happens |
+| --- | --- |
+| Known `firebase_uid` | That account. The uid is stable; an email address is not, so the uid is the key. |
+| New uid, address matches an existing row, **verified** | Linked. They demonstrably control the mailbox. |
+| New uid, address matches an existing row, **unverified** | **Refused (403).** Firebase does not verify an address at password sign-up, so without this anyone could register `admin@visionguardeg.com` in Firebase and inherit the administrator row. |
+| New uid, new address | A new customer account, with whatever consent the form collected. |
+
+Administrator addresses can never *create* a row this way, exactly as they
+cannot through the old signup form.
+
+`/api/auth/signup` is **closed** (410) — it wrote a `pw_hash` Firebase knows
+nothing about, so every account it made would be one the sign-in form could no
+longer sign into. `/api/auth/login` is deliberately **still live** as
+break-glass: it is the only way into the timesheet before the admin exists in
+Firebase, and the way back in if Firebase is unreachable. `/api/auth/google`
+(the older Google Identity Services path) still works and is no longer called.
+
+#### Turning it on — console steps, none of them optional
+
+Creating a Firebase project does not enable Authentication. Until you do this,
+every sign-in fails with `CONFIGURATION_NOT_FOUND`, which the UI reports as
+*"خدمة الحسابات لسه مش مفعّلة"*.
+
+1. **Firebase console → Authentication → Get started.**
+2. **Sign-in method → Email/Password → Enable.**
+3. **Sign-in method → Google → Enable**, and set a support email.
+4. **Settings → Authorized domains**, add: `visionguardeg.com`,
+   `www.visionguardeg.com`, and `visionguard-3dx.pages.dev`. Missing these
+   breaks the Google popup only, with `auth/unauthorized-domain`.
+5. **Users → Add user** — create `admin@visionguardeg.com`. The console cannot
+   mark an address verified, and rule 2 above will refuse to link an
+   unverified one, so then use **"نسيت كلمة السر؟"** on the sign-in form and
+   complete the reset: finishing a password reset is what marks the address
+   verified in Firebase, and the next sign-in links it to the admin row.
+   Until that is done, sign in with the break-glass password route instead.
+
+The web config in `public/firebase-auth.js` is public by design — an API key
+there identifies the project, it does not authorise anything. The project id
+is duplicated in `lib/firebase.js` as a default for the same reason
+`WHATSAPP_TEMPLATE` has one: `wrangler.toml [vars]` have not reliably reached
+this project's runtime, and an empty audience would mean no sign-in at all.
+Change one, change both.
+
+### The privacy policy
+
+`public/privacy.html` is a real page on this site, in both languages, linked
+from every footer and from the consent box on both the signup form and
+checkout. It used to point at `visionguardeg.com/pages/privacy-policy`, a path
+this deployment does not serve.
+
+It is written against what the code actually does, which is the only way a
+policy stays true: the fields each form collects, the session cookie and the
+local storage, the Meta pixel and the server-side purchase events, the order
+alert pushed to internal messaging, and the attendance records kept for staff.
+
+On marketing specifically — the part most likely to be read — it separates
+**service messages** (order confirmations, delivery updates, notices about the
+account: part of the contract, sent regardless of any tick box) from
+**marketing and product updates** (newsletter, offers, new arrivals, and
+similar-product email to people who have bought before), which are consented
+to and carry an unsubscribe in every message. WhatsApp/SMS marketing is a
+third, separate consent. That mirrors the three-box split the signup form
+already implements.
+
+Two things to finish, neither of them code:
+
+- **`privacy@visionguardeg.com` must exist** — the policy names it as the
+  address for access, correction and deletion requests. Point it at a mailbox
+  someone reads, or change it to the WhatsApp number.
+- **Have a lawyer read it.** It is a factual, plain-language description of
+  this system, not legal advice, and Egypt's PDPL has specific requirements
+  (including how consent is recorded) that are a matter for counsel.
+
+The links to the terms of use and the refund and shipping policies still point
+at `visionguardeg.com/pages/...`. Those pages were out of scope here; if that
+path does not serve them, they need the same treatment.
 
 ### How the passwords are stored
 
@@ -610,10 +831,73 @@ five-minute grace either side, plus `open` while a shift is running and `absent`
 for a day with nothing recorded. A day with a recorded shift is never `absent`,
 even if it rounds to zero — the two must not look the same on a timesheet.
 
-Read the raw records with `npm run db:attendance`.
+Read the raw records with `npm run db:attendance`, and the staff list with
+`npm run db:staff`.
 
-There is no manager view yet. Corrections are a SQL statement today; a proper
-admin page is the obvious next piece of work.
+### The Team tab — did everyone do their six hours
+
+An **administrator** sees one more tab: every account on the company domain,
+for one Cairo day, ordered so the rows that need action come first (absent,
+then short, then still-clocked-in). Above the table is the one-line answer —
+*everyone completed their day*, or *some days need a look* — and behind it a
+rolling range (1–31 days) with each person's total, expected, balance and
+count of short days.
+
+"Everyone completed their day" means exactly that: nobody absent, nobody
+short, and nobody still clocked in. An open shift is not a finished day,
+however long it has been running.
+
+Forgotten clock-outs are closed before the sheet is read, so one person who
+never clocked out cannot make every total behind them nonsense.
+
+**The view is read-only.** Editing an employment record from a browser tab is
+not something this grants, and the API has no write path for it.
+
+### Creating the administrator
+
+An admin can read every employee's timesheet, so the account is not creatable
+from the internet: `/api/auth/signup` refuses the administrator addresses
+outright, and there is no bootstrap URL to find. It is created by a script,
+run by someone who already holds the deployment's credentials:
+
+On macOS/Linux (bash, zsh):
+
+```bash
+SESSION_SECRET="the-real-secret" npm run admin:create -- --password "a-password"
+```
+
+On Windows (PowerShell) — there is no `VAR=value command` prefix, so it is two
+statements:
+
+```powershell
+$env:SESSION_SECRET = "the-real-secret"
+```
+
+```powershell
+npm run admin:create -- --password "a-password"
+```
+
+`the-real-secret` is the literal value of `SESSION_SECRET` from **Workers &
+Pages → visionguard → Settings → Variables and Secrets**, not a placeholder to
+leave in place.
+
+That creates **admin@visionguardeg.com** with the password you pass, `role`
+set to `admin`. Add `--local` to write to the local D1 instead, `--email`
+for a different address, or `--print` to see the SQL without running it.
+
+`SESSION_SECRET` is not optional and it must be the **same value the
+deployment uses** — passwords are peppered with it before PBKDF2 (see
+`lib/auth.js`), so a hash built with a different secret produces an account
+that looks fine in the database and can never be signed into. The script reads
+it from the environment first, then from `.dev.vars`.
+
+Re-running resets that account's password and re-asserts the role. Nothing
+else about the row is touched.
+
+Who counts as an admin: `role = 'admin'`, **or** an address listed in
+`ADMIN_EMAILS` (default: the one address above). The second is a deliberate
+way back in — a restored database with a wrong role column would otherwise
+lock the company out of its own timesheets with no route back through the UI.
 
 ---
 
@@ -655,8 +939,12 @@ Secrets**, as *encrypted secrets* — not plaintext variables. Locally they go i
 | Variable | Required | What it does |
 | --- | --- | --- |
 | `SESSION_SECRET` | **Yes** | Signs session cookies and peppers password hashes. 32+ random characters. Without it, sign-in returns a clear 503 rather than running insecurely. |
-| `WHATSAPP_TO` | No | Where order alerts go. Defaults to the number published on the site. |
+| `TELEGRAM_BOT_TOKEN` | No | Bot token from @BotFather. Setting it makes Telegram the alert channel. Secret. |
+| `TELEGRAM_CHAT_ID` | No | Chat the bot posts into. Falls back to the latest chat in `getUpdates`. |
+| `WHATSAPP_TO` | No | Where WhatsApp order alerts go. Defaults to the number published on the site. |
 | `WHATSAPP_*` / `ULTRAMSG_*` / `TWILIO_*` / `CALLMEBOT_KEY` | No | Pick one provider — see the table above. |
+| `NOTIFY_PROVIDER` | No | Force a provider instead of auto-detecting: `telegram`, `meta`, `ultramsg`, `twilio`, `callmebot`. |
+| `ADMIN_EMAILS` | No | Who may read the team timesheet, on top of `role='admin'`. Comma-separated. Default `admin@visionguardeg.com`. These addresses cannot be registered through the signup form. |
 | `WORK_DAY_HOURS` | No | Contracted day. Default `6`. Already set in `wrangler.toml`. |
 | `SHIPPING_FLAT` | No | Flat shipping fee in EGP. Default `0` = quoted at confirmation. |
 | `META_PIXEL_ID` | No | Meta Pixel ID for browser and server-side conversion tracking. |
@@ -695,13 +983,14 @@ customers out of checkout.
 | `/api/newsletter` | POST | Bare subscribe. |
 | `/api/attendance` | GET | Staff only. Days, sessions, totals. |
 | `/api/attendance/clock` | POST | Staff only. `{action: "in" \| "out"}`. |
+| `/api/attendance/team` | GET | **Admin only.** Every employee for one Cairo day, plus a rolling range. `?date=YYYY-MM-DD&days=1..31`. |
 
 ---
 
 ## Still to do
 
-- **A manager view for attendance.** Employees can see their own record;
-  correcting someone else's is a SQL statement today.
+- **Editing an attendance record.** The Team tab reads; it does not write.
+  Correcting someone's forgotten clock-out is still a SQL statement.
 - **Order status changes.** `orders.status` exists (`new` → `confirmed` →
   `shipped` → `done` → `cancelled`) and is shown in the customer's account, but
   nothing moves it yet except SQL.

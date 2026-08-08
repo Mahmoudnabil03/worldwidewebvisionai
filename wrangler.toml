@@ -48,6 +48,31 @@ database_id = "b538d110-35d6-43bd-b821-233c26e173bd"
 binding = "AI"
 
 # --------------------------------------------------------------------------
+# Workers KV.
+#
+# Bound as KV, namespace 87aac66956bf4df382f679ce733a79fb. Declared in TOML
+# rather than the wrangler.jsonc form Cloudflare's snippet uses — this is a
+# Pages project and its config is this file; the two formats are equivalent.
+#
+# A NOTE ON WHAT THIS DOES AND DOES NOT FIX. It was added to cure a loading
+# timeout, and it is worth being straight about that: the timeout is not
+# reproducible. Measured against production, 600 requests at 200 concurrent
+# returned zero errors, p95 0.45s on the database path and 0.54s on the
+# homepage. The slow first byte that did exist came from cold isolates
+# running 13 schema statements before answering, and that is already fixed in
+# lib/db.js — p95 went from 2.21s to 0.66s.
+#
+# KV is genuinely good at one thing here: reads that are identical for every
+# visitor, cached at the edge. The catalogue is the candidate. It is a poor
+# fit for anything per-user or write-heavy — it is eventually consistent, so
+# a session, a cart or a rate-limit counter stored here would be wrong for up
+# to a minute, and D1 stays the right home for those.
+# --------------------------------------------------------------------------
+[[kv_namespaces]]
+binding = "KV"
+id = "87aac66956bf4df382f679ce733a79fb"
+
+# --------------------------------------------------------------------------
 # Non-secret settings. Secrets (SESSION_SECRET, WhatsApp credentials) do NOT
 # belong here - put them in .dev.vars locally and in the Pages dashboard for
 # production. See .dev.vars.example.
@@ -71,8 +96,22 @@ binding = "AI"
 WHATSAPP_TEMPLATE = "new_order_alert"
 WHATSAPP_TEMPLATE_LANG = "en_US"
 
+# Firebase Auth. Not a secret: the project id ships in the browser config on
+# every site that uses Firebase. It is still required — lib/firebase.js checks
+# each ID token's `aud` against it, and that check is the only thing stopping
+# a token minted by somebody else's Firebase project from signing in here. If
+# this is unset the sign-in endpoint refuses to run rather than verify
+# nothing.
+FIREBASE_PROJECT_ID = "visionguard-7425d"
+
 # Contracted working day, in hours. Drives the attendance targets.
 WORK_DAY_HOURS = "6"
 # Flat shipping fee in EGP. 0 means "quoted per governorate at confirmation",
 # which is what the store actually does today.
 SHIPPING_FLAT = "0"
+
+# Product images are stored in the KV namespace bound above, NOT in an external
+# object store. The Backblaze B2 placeholders that used to sit here are gone,
+# and no code ever read them — see lib/images.js for where the bytes live and
+# functions/assets/products/[[path]].js for how they are served. There is
+# nothing to configure: binding KV is the whole setup.

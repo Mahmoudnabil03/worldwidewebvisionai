@@ -12,7 +12,7 @@
    editing a price here is the whole change; there is no second list to
    forget.
 
-   PRICES — 1 August 2026
+   PRICES — 4 August 2026
    Taken from the "سعر البيع" column of "أسعار سوق الكاميرات new.xlsm",
    which is cost + margin and therefore lands on quarters and halves. Retail
    does not price in quarter-pounds, so each figure is rounded to the nearest
@@ -284,7 +284,7 @@ export const PRODUCTS = [
     name: 'Tapo C70 Wi-Fi',
     ar: '٢ ميجابكسل · داخلية', en: '2MP · indoor',
     img: 'assets/products/tapo-c70.jpg',
-    price: 940, was: 0
+    price: 1000, was: 0
   },
   {
     id: 'tapo-c200', cat: 'wireless', brand: 'Tapo',
@@ -298,7 +298,7 @@ export const PRODUCTS = [
     name: 'Tapo C310 Wi-Fi Outdoor',
     ar: '٣ ميجابكسل · خارجية · رؤية ليلية', en: '3MP · outdoor · night vision',
     img: 'assets/products/tapo-c310.jpg',
-    price: 1875, was: 0
+    price: 1750, was: 0
   },
   {
     id: 'tapo-c520ws', cat: 'wireless', brand: 'Tapo',
@@ -421,28 +421,28 @@ export const PRODUCTS = [
     name: 'Skyworth 64GB Surveillance',
     ar: 'كارت ذاكرة MicroSD / TF', en: 'MicroSD / TF card',
     img: 'assets/products/skyworth-64gb.jpg',
-    price: 565, was: 0
+    price: 610, was: 0
   },
   {
     id: 'skyworth-t128', cat: 'storage', brand: 'Skyworth',
     name: 'Skyworth SKY-T128 128GB',
     ar: 'كارت ذاكرة MicroSD / TF · U1 A1', en: 'MicroSD / TF · U1 A1',
     img: 'assets/products/skyworth-t128.webp',
-    price: 875, was: 0
+    price: 960, was: 0
   },
   {
     id: 'evo-64gb', cat: 'storage', brand: 'Samsung EVO',
     name: 'Samsung EVO 64GB',
     ar: 'كارت ذاكرة MicroSD / TF', en: 'MicroSD / TF card',
-    img: 'assets/products/microsd-64gb.svg',
-    price: 500, was: 0
+    img: 'assets/products/samsung-evo-64gb.jpg',
+    price: 650, was: 0
   },
   {
     id: 'evo-128gb', cat: 'storage', brand: 'Samsung EVO',
     name: 'Samsung EVO 128GB',
     ar: 'كارت ذاكرة MicroSD / TF', en: 'MicroSD / TF card',
-    img: 'assets/products/microsd-128gb.svg',
-    price: 750, was: 0
+    img: 'assets/products/samsung-evo-128gb.jpg',
+    price: 990, was: 0
   },
 
   /* ---------------- Power ---------------- */
@@ -482,49 +482,49 @@ export const PRODUCTS = [
     id: 'rg59-50m', cat: 'cable', brand: 'RG59',
     name: 'RG59 Coax 50m',
     ar: 'سلك كاميرات · ٥٠ متر', en: 'Camera coax · 50 m roll',
-    img: 'assets/products/coax-rg59.svg',
+    img: 'assets/products/rg59-coax-roll.jpg',
     price: 440, was: 0
   },
   {
     id: 'rg59-200m', cat: 'cable', brand: 'RG59',
     name: 'RG59 Coax 200m',
     ar: 'سلك كاميرات · ٢٠٠ متر', en: 'Camera coax · 200 m roll',
-    img: 'assets/products/coax-rg59.svg',
+    img: 'assets/products/rg59-coax-roll.jpg',
     price: 1625, was: 0
   },
   {
     id: 'rg59-300m', cat: 'cable', brand: 'RG59',
     name: 'RG59 Coax 300m',
     ar: 'سلك كاميرات · ٣٠٠ متر', en: 'Camera coax · 300 m roll',
-    img: 'assets/products/coax-rg59.svg',
+    img: 'assets/products/rg59-coax-roll.jpg',
     price: 2000, was: 0
   },
   {
     id: 'rg60-50m', cat: 'cable', brand: 'RG60',
     name: 'RG60 Coax 50m',
     ar: 'سلك كاميرات · ٥٠ متر', en: 'Camera coax · 50 m roll',
-    img: 'assets/products/coax-rg60.svg',
+    img: 'assets/products/rg60-coax-roll.jpg',
     price: 440, was: 0
   },
   {
     id: 'rg60-100m', cat: 'cable', brand: 'RG60',
     name: 'RG60 Coax 100m',
     ar: 'سلك كاميرات · ١٠٠ متر', en: 'Camera coax · 100 m roll',
-    img: 'assets/products/coax-rg60.svg',
+    img: 'assets/products/rg60-coax-roll.jpg',
     price: 750, was: 0
   },
   {
     id: 'rg60-300m', cat: 'cable', brand: 'RG60',
     name: 'RG60 Coax 300m',
     ar: 'سلك كاميرات · ٣٠٠ متر', en: 'Camera coax · 300 m roll',
-    img: 'assets/products/coax-rg60.svg',
+    img: 'assets/products/rg60-coax-roll.jpg',
     price: 2500, was: 0
   },
   {
     id: 'cat6-305m', cat: 'cable', brand: 'Premium Line',
     name: 'Premium Line Cat6 UTP 305m',
     ar: 'سلك شبكة Cat6 · ٣٠٥ متر · ٢٧ ج.م للمتر', en: 'Cat6 network cable · 305 m box · 27 EGP per metre',
-    img: 'assets/products/cat6-utp.svg',
+    img: 'assets/products/cat6-utp.jpg',
     price: 8125, was: 0
   },
 
@@ -554,7 +554,12 @@ export const PRODUCTS = [
     id: 'connector-bnc', cat: 'accessory', brand: 'Vision Guard',
     name: 'BNC Connector',
     ar: 'جاك BNC', en: 'BNC connector',
-    img: 'assets/products/bnc-connector.svg',
+    /* The photograph, not the line drawing next to it. Both files exist and
+       the rule at the top of this file prefers a real photo of the exact part
+       wherever one is available — a BNC jack is a BNC jack, so there is no
+       brand or model to misrepresent here. The .svg stays in the repo because
+       the accessory CATEGORY card still uses it. */
+    img: 'assets/products/bnc-connector.jpg',
     price: 10, was: 0
   },
   {
@@ -576,6 +581,20 @@ export function imageFor(product) {
 }
 
 const BY_ID = PRODUCTS.reduce(function (m, p) { m[p.id] = p; return m; }, {});
+
+export function productDescription(product, lang) {
+  const current = lang === 'en' ? 'en' : 'ar';
+  const category = CATEGORIES.find((c) => c.id === product.cat) || {};
+  const spec = product[current] || product.en || product.ar || '';
+  const shortCategory = current === 'en' ? (category.en || '') : (category.ar || '');
+  const brand = product.brand || '';
+
+  if (current === 'en') {
+    return `${brand} ${product.name} is a ${shortCategory.toLowerCase()} solution built for reliable monitoring, straightforward installation and long daily use. ${spec}.`;
+  }
+
+  return `${brand} ${product.name} هو حل ${shortCategory.toLowerCase()} مصمم للمراقبة الموثوقة والتركيب السهل والاستخدام اليومي. ${spec}.`;
+}
 
 export function findProduct(id) {
   return Object.prototype.hasOwnProperty.call(BY_ID, id) ? BY_ID[id] : null;

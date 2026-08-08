@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Vision Guard | كاميرات مراقبة وأنظمة أمان في مصر</title>
 <meta name="description" content="كاميرات مراقبة وايرلس وأنالوج، أجهزة تسجيل DVR و XVR، هاردات مراقبة وبور سبلاي. Dahua و Skyworth و Tapo بأفضل سعر مع شحن سريع ودعم فني.">
-<meta name="theme-color" content="#08090B">
+<meta name="theme-color" content="#F6F7F9">
 
 <!-- Facebook Business Manager domain verification. Must stay in <head>, in the
      served HTML — Facebook fetches the page and parses it without running any
@@ -26,27 +26,51 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap">
-<!-- ?v= is a cache buster, and it is load-bearing until the zone cache rule is
-     fixed. A Cache Rule on visionguardeg.com overrides the Cache-Control in
-     _headers with a 4-hour TTL, so a CSS change would otherwise take four
-     hours to reach anyone who had already visited. The HTML itself is
-     no-store, so a changed href here is picked up immediately. Bump V on any
-     CSS change, or better: set that rule to respect origin headers and drop
-     this entirely. -->
-<link rel="stylesheet" href="styles.css?v=2">
+<!-- ?v= is a cache buster. Bump it on any CSS or JS change, on every page and
+     in every module import, together.
 
-<script>(function(d){var c=d.documentElement;c.className=c.className.replace('no-js','js');try{var t=localStorage.getItem('vg-theme');if(t==='light'||t==='dark'){c.setAttribute('data-theme',t);}}catch(e){}})(document);</script>
+     It is no longer propping up a broken zone setting. visionguardeg.com used
+     to carry a Browser Cache TTL of 14400 at the zone level, which rewrote the
+     Cache-Control from _headers before it reached anyone: app.css was declared
+     max-age=3600 and served as 14400, and catalog.js was declared 300 — five
+     minutes, because it carries PRICES — and served as four hours. That
+     setting is now "Respect Existing Headers", so _headers is authoritative
+     and those values arrive as written.
+
+     Keep bumping this anyway. A new URL is an unconditional edge miss, which
+     is what makes a deploy visible immediately rather than after the file TTL
+     expires — and a stale account.js talking to a changed API is a broken
+     sign-in, not a stale colour. Module imports do not inherit the query, so
+     the ?v= inside account.js/shop.js/page.js/product.js has to move with it.
+     The HTML itself revalidates every time, so a changed href here is picked
+     up on the next request. -->
+<link rel="stylesheet" href="styles.css?v=31">
+
+<script>(function(d){var c=d.documentElement;c.className=c.className.replace('no-js','js');var t='light';try{var s=localStorage.getItem('vg-theme');if(s==='dark'||s==='light'){t=s;}}catch(e){}c.setAttribute('data-theme',t);})(document);</script>
 <!-- Meta Pixel. The loader lives in pixel.js so the CSP needs no second
      inline-script hash - see that file. The id below is public; the ACCESS
-     TOKEN is a secret and lives only in META_ACCESS_TOKEN, server-side. -->
-<script src="pixel.js" defer></script>
-<noscript><img height="1" width="1" style="display:none" alt=""
-  src="https://www.facebook.com/tr?id=2037293923502315&ev=PageView&noscript=1"></noscript>
+     TOKEN is a secret and lives only in META_ACCESS_TOKEN, server-side.
+
+     consent.js MUST stay ahead of pixel.js. Both are `defer`, so document
+     order is execution order, and the pixel waits on window.vgConsent to
+     exist. Reorder these two and the pixel silently never loads - which is
+     the safe direction to fail, and the reason it is written that way.
+
+     The <noscript> beacon that used to sit here is gone on purpose. It fired
+     a tracking request from the markup itself, before and regardless of any
+     consent, and a visitor with JavaScript off cannot be shown a bar to
+     answer. There is no way to make that request consented, so it is not
+     made. The server-side Conversions API in functions/api/capi.js already
+     covers the visitors the browser pixel misses. -->
+<script src="consent.js?v=31" defer></script>
+<script src="promo.js?v=31" defer></script>
+<script src="pixel.js?v=31" defer></script>
+<script src="track.js?v=31" defer></script>
 </head>
 <body>
 
 <div class="boot" aria-hidden="true">
-  <div class="boot__mark"><img src="assets/logo-dark.png" alt="" width="322" height="190"></div>
+  <div class="boot__mark"><img src="assets/logo-trim.png" alt="" width="322" height="190"></div>
   <div class="boot__bar"><i></i></div>
 </div>
 
@@ -63,7 +87,7 @@
     <a class="strip__item strip__wa" href="https://wa.me/201105006854" target="_blank" rel="noopener">
       <span data-en="WhatsApp">واتساب</span> <span dir="ltr">01105006854</span>
     </a>
-    <p class="strip__item strip__hours" data-en="12 PM – 8 PM · Closed Friday">١٢م – ٨م · الجمعة إجازة</p>
+    <p class="strip__item strip__hours" data-en="10 AM – 8 PM · Closed Friday">١٠ص – ٨م · الجمعة إجازة</p>
   </div>
 </div>
 
@@ -71,11 +95,12 @@
 <header class="nav" id="nav">
   <div class="nav__inner shell">
     <a class="brand" href="#top" aria-label="Vision Guard">
-      <img class="brand__logo" src="assets/logo-dark.png" alt="Vision Guard" width="322" height="190">
+      <img class="brand__logo" src="assets/logo-trim.png" alt="Vision Guard" width="322" height="190">
     </a>
 
     <nav class="nav__links" aria-label="Primary">
       <a href="shop.html"   data-en="Shop">المتجر</a>
+      <a href="game.html" data-en="Planner">المخطّط</a>
       <a href="#categories" data-nav="categories" data-en="Categories">الأقسام</a>
       <a href="#products"   data-nav="products"   data-en="Products">المنتجات</a>
       <a href="#how"        data-nav="how"        data-en="How to order">طريقة الطلب</a>
@@ -97,7 +122,7 @@
       <a class="navlink-account" href="account.html" data-en="Account">حسابي</a>
       <a class="btn btn--sm" href="shop.html" data-en="Order now">اطلب دلوقتي</a>
       <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
-        <span></span><span></span>
+        <span></span><span></span><span></span>
       </button>
     </div>
   </div>
@@ -110,13 +135,26 @@
     <a href="#categories"><i>03</i><span data-en="Categories">الأقسام</span></a>
     <a href="#how"><i>04</i><span data-en="How to order">طريقة الطلب</span></a>
     <a href="#contact"><i>05</i><span data-en="Contact">تواصل</span></a>
+    <a href="game.html"><i>06</i><span data-en="Planner">المخطّط</span></a>
     <div class="menu__foot">
       <a href="tel:+201260087815" dir="ltr">01260087815</a>
       <a href="https://wa.me/201105006854" target="_blank" rel="noopener" dir="ltr">WhatsApp 01105006854</a>
     </div>
   </div>
 </div>
+<!-- A second copy of the Meta base code used to sit here, inline, with its own
+     <noscript> beacon. Both are removed.
 
+     The inline block was already dead: the CSP allows exactly one inline
+     script, pinned by the hash of the no-js/js swap in <head>, so this one
+     was blocked on every page load and had been for as long as the header
+     existed. Left in place it was a loaded gun - relax the CSP for any
+     unrelated reason and it comes back to life as a SECOND, unconsented
+     pixel firing a duplicate PageView that pixel.js has no way to
+     deduplicate against.
+
+     The <noscript> beacon was not dead. It fired for every visitor with
+     JavaScript off, ahead of any consent and with no way to ask for one. -->
 <main id="top">
 
   <!-- ============ HERO ============ -->
@@ -367,7 +405,7 @@
           </div>
           <div>
             <dt data-en="Opening hours">مواعيد العمل</dt>
-            <dd data-en="12 PM – 8 PM daily<br>Friday closed">يوميًا من ١٢ ظهرًا حتى ٨ مساءً<br>الجمعة إجازة</dd>
+            <dd data-en="10 AM – 8 PM daily<br>Friday closed">يوميًا من ١٠ صباحا حتى ٨ مساءً<br>الجمعة إجازة</dd>
           </div>
           <div>
             <dt data-en="Online">على الإنترنت</dt>
@@ -389,12 +427,12 @@
     <div class="footer__grid">
       <div class="footer__brand">
         <a class="brand" href="#top" aria-label="Vision Guard">
-          <img class="brand__logo" src="assets/logo-dark.png" alt="Vision Guard" width="322" height="190" loading="lazy">
+          <img class="brand__logo" src="assets/logo-trim.png" alt="Vision Guard" width="322" height="190" loading="lazy">
         </a>
         <p class="footer__tag" data-en="Cameras, recorders, storage and power — for homes, shops and businesses across Egypt.">
           كاميرات وأجهزة تسجيل ووحدات تخزين وبور سبلاي — للبيوت والمحلات والشركات في كل مصر.
         </p>
-        <p class="footer__status"><span class="dot"></span><span data-en="12 PM – 8 PM · Closed Friday">١٢م – ٨م · الجمعة إجازة</span></p>
+        <p class="footer__status"><span class="dot"></span><span data-en="10 AM – 8 PM · Closed Friday">١٠ صباحًا – ٨ مساءً · الجمعة إجازة</span></p>
       </div>
 
       <nav class="footer__col" aria-label="Categories">
@@ -408,10 +446,21 @@
 
       <nav class="footer__col" aria-label="Policies">
         <h4 data-en="Policies">السياسات</h4>
-        <a href="https://visionguardeg.com/pages/privacy-policy" target="_blank" rel="noopener" data-en="Privacy policy">سياسات الخصوصية</a>
-        <a href="https://visionguardeg.com/pages/terms-and-conditions" target="_blank" rel="noopener" data-en="Terms of use">شروط الاستخدام</a>
-        <a href="https://visionguardeg.com/pages/refund-policy" target="_blank" rel="noopener" data-en="Exchange &amp; refund">سياسة الاستبدال والاسترجاع</a>
-        <a href="https://visionguardeg.com/pages/shipping-policy" target="_blank" rel="noopener" data-en="Shipping policy">سياسة الشحن</a>
+        <!-- These three pointed at /pages/terms-and-conditions, /pages/refund-policy
+             and /pages/shipping-policy — paths that do not exist on this site.
+             Cloudflare Pages answers an unmatched path with index.html and a 200,
+             so all three silently returned the HOMEPAGE: same 29,597 bytes, no
+             error, nothing to notice unless you followed the link and wondered
+             why you were back where you started. The real pages are right here,
+             and the shop and product pages were already linking to them. -->
+        <a href="privacy.html" data-en="Privacy policy">سياسات الخصوصية</a>
+        <a href="terms.html" data-en="Terms of use">شروط الاستخدام</a>
+        <a href="refund.html" data-en="Exchange &amp; refund">سياسة الاستبدال والاسترجاع</a>
+        <a href="shipping.html" data-en="Shipping policy">سياسة الشحن</a>
+        <!-- consent.js listens for data-consent="open" anywhere on the page
+             and reopens the cookie bar. It is a real href as well, so it
+             still leads somewhere useful with JavaScript off. -->
+        <a href="privacy.html#cookies" data-consent="open" data-en="Cookie settings">إعدادات الكوكيز</a>
       </nav>
 
       <div class="footer__col footer__col--contact">
@@ -432,8 +481,8 @@
   </div>
 </footer>
 
-<script src="main.js" defer></script>
-<script type="module" src="home.js"></script>
-<script src="assistant.js" defer></script>
+<script src="main.js?v=31" defer></script>
+<script type="module" src="home.js?v=31"></script>
+<script src="assistant.js?v=31" defer></script>
 </body>
 </html>

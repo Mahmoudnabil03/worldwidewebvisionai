@@ -28,6 +28,41 @@
 .view{ min-height:60vh; }
 
 /* =========================================================================
+   LEGAL — long-form policy pages (privacy.html)
+
+   A measure of about 70 characters, and headings that are clearly heavier
+   than the paragraphs under them: a policy is only useful if someone can
+   find the one clause they came for. Arabic is the source language here, so
+   the rhythm is set for it and Latin text inherits the same scale.
+   ========================================================================= */
+.legal{
+  max-width:74ch; padding-block:0 clamp(48px,7vw,96px);
+  color:var(--ink-2); line-height:1.85;
+}
+.legal__stamp{ font-size:.8125rem; color:var(--ink-3); }
+.legal__stamp b{ font-family:var(--latin); color:var(--ink-2); }
+.legal h2{
+  margin-block:clamp(30px,4vw,44px) 12px;
+  font-size:clamp(1.0625rem,2.4vw,1.25rem); font-weight:700;
+  letter-spacing:-.02em; color:var(--ink);
+}
+.legal h2:first-child{ margin-block-start:0; }
+.legal h3{
+  margin-block:22px 8px;
+  font-size:.9375rem; font-weight:600; color:var(--ink);
+}
+.legal p{ margin-block:0 12px; }
+.legal ul{ margin-block:0 12px; padding-inline-start:0; list-style:none; display:grid; gap:9px; }
+.legal li{ position:relative; padding-inline-start:20px; }
+/* A marker drawn rather than inherited: list-style bullets sit outside the
+   content box and get clipped at the RTL edge on narrow screens. */
+.legal li::before{
+  content:""; position:absolute; inset-inline-start:4px; inset-block-start:.72em;
+  width:5px; height:5px; border-radius:50%; background:var(--accent); opacity:.75;
+}
+.legal a{ color:var(--accent); text-decoration:underline; text-underline-offset:3px; }
+
+/* =========================================================================
    NAV ADDITIONS — account + cart buttons
    ========================================================================= */
 .iconbtn{
@@ -95,6 +130,7 @@ html[lang="ar"] .resultline{ font-family:var(--arabic); font-size:.8125rem; lett
   display:grid; grid-template-rows:auto 1fr;
   border:1px solid var(--line); border-radius:14px;
   background:var(--bg-1); overflow:hidden;
+  cursor:pointer;
   transition:border-color .5s var(--e-out), transform .6s var(--e-out);
 }
 .pcard:hover{ border-color:rgba(var(--accent-rgb),.4); transform:translateY(-3px); }
@@ -135,6 +171,283 @@ html[lang="ar"] .pcard__cat{ font-family:var(--arabic); font-size:.75rem; letter
 .pcard__price em{ font-style:normal; font-size:.6875rem; color:var(--ink-3); font-family:var(--sans); }
 .pcard__buy{ flex:none; }
 
+/* ---------- product detail page ---------- */
+.product-shell{ padding-block:clamp(38px, 6vw, 78px); }
+.product-card{
+  display:grid; grid-template-columns:1fr 1fr; gap:clamp(24px, 3vw, 42px);
+  align-items:start; padding:clamp(18px,2.5vw,28px);
+  border:1px solid var(--line); background:var(--bg-1); border-radius:20px;
+}
+.product-card__plate{
+  background:var(--plate); border-radius:18px; aspect-ratio:1/1; overflow:hidden; display:grid; place-items:center;
+}
+.product-card__plate img{
+  width:100%; height:100%; object-fit:contain; padding:20px;
+}
+.product-card__body{ display:grid; gap:16px; align-content:start; }
+.product-card__spec{ color:var(--ink-3); font-size:1rem; }
+.product-card__meta{
+  display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:18px;
+  padding-block:12px; border-block:1px solid var(--line);
+}
+.product-card__label{ display:block; font-size:.73rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-4); margin-bottom:6px; }
+html[lang="ar"] .product-card__label{ letter-spacing:normal; text-transform:none; }
+.product-card__desc{ max-width:62ch; }
+.product-card__actions{ display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+.pcard__link{
+  display:inline-flex; margin-top:12px; align-self:start;
+  font-size:.8125rem; font-weight:700;
+}
+
+/* ---------- live interest on a product page ----------
+   A quiet line, not a flashing urgency banner: the number is real, so it does
+   not need theatre to be believed. */
+.product-live{
+  display:inline-flex; align-items:center; gap:8px;
+  margin-block:2px 14px; padding:7px 14px; border-radius:999px;
+  background:var(--accent-dim); border:1px solid rgba(var(--accent-rgb),.28);
+  font-size:.8125rem; font-weight:600; color:var(--ink-2);
+}
+.product-live[hidden]{ display:none; }
+.product-live__dot{
+  width:7px; height:7px; border-radius:50%; background:var(--accent);
+  animation:pulse 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce){ .product-live__dot{ animation:none; } }
+
+/* =========================================================================
+   COVERAGE PLANNER (game.html)
+
+   The floor plan is an SVG whose viewBox is measured in METRES, so every
+   stroke width and font size below is also in metres — 0.08 is an
+   eight-centimetre line. That is why the numbers look strange and why they
+   must stay small: the plan scales to its container, and a 1px stroke would
+   become a wall three metres thick on a compound.
+   ========================================================================= */
+.gstep{ margin-block:clamp(28px,4vw,46px); }
+.gstep__title{
+  display:flex; align-items:center; gap:12px;
+  font-size:1.05rem; font-weight:700; letter-spacing:-.02em; margin-bottom:16px;
+}
+.gstep__n{
+  width:28px; height:28px; flex:none; border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--accent); color:var(--accent-ink);
+  font-family:var(--latin); font-size:.8125rem; font-weight:700;
+}
+
+/* ---------- step 1: property cards ---------- */
+.propgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:clamp(10px,1.6vw,16px); }
+.prop{
+  display:grid; gap:6px; justify-items:center; text-align:center;
+  padding:clamp(16px,2.2vw,24px) 14px;
+  border:1px solid var(--line); border-radius:16px; background:var(--bg-1);
+  transition:border-color .3s, transform .35s var(--e-out), box-shadow .35s var(--e-out);
+}
+.prop:hover{ border-color:var(--line-2); transform:translateY(-2px); }
+.prop.is-on{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(var(--accent-rgb),.14);
+}
+.prop__icon{ font-size:2rem; line-height:1; }
+.prop__name{ font-weight:700; font-size:.9375rem; color:var(--ink); }
+.prop__note{ font-size:.75rem; color:var(--ink-3); line-height:1.5; }
+
+/* ---------- toolbar ---------- */
+.gtoolbar{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.gtoolbar__acts{ display:flex; flex-wrap:wrap; gap:8px; }
+.seg{ display:inline-flex; padding:3px; border:1px solid var(--line-2); border-radius:999px; background:var(--bg-2); }
+.seg__b{
+  padding:8px 18px; border-radius:999px;
+  font-size:.8125rem; font-weight:600; color:var(--ink-3);
+  transition:background .3s, color .3s;
+}
+.seg__b.is-on{ background:var(--accent); color:var(--accent-ink); }
+
+/* ---------- layout ---------- */
+.glayout{ display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:clamp(14px,2vw,22px); align-items:start; }
+.gside{ display:grid; gap:clamp(14px,2vw,20px); }
+
+.gplan{
+  border:1px solid var(--line); border-radius:16px; background:var(--bg-1);
+  padding:clamp(10px,1.6vw,18px);
+}
+.planwrap{
+  width:100%; height:auto; display:block;
+  aspect-ratio:3/2; cursor:crosshair; touch-action:manipulation;
+  border-radius:10px; background:var(--bg-2);
+}
+.gplan__hint{ margin-top:10px; font-size:.75rem; color:var(--ink-4); text-align:center; }
+
+/* ---------- the plan itself (all lengths in metres) ---------- */
+.pl-room{ fill:rgba(var(--ink-rgb),.035); stroke:none; }
+.pl-roomlabel{
+  fill:var(--ink-4); font-size:.55px; text-anchor:middle;
+  font-family:var(--sans); pointer-events:none;
+}
+.pl-wall{ stroke:var(--ink-3); stroke-width:.14; stroke-linecap:round; }
+
+/* The cone. Screen blending keeps overlapping cameras readable instead of
+   stacking into an opaque blob. */
+.pl-cone{
+  fill:rgba(var(--accent-rgb),.20);
+  stroke:rgba(var(--accent-rgb),.55); stroke-width:.05;
+  transition:fill .25s, stroke .25s;
+}
+.pl-cone.is-on{ fill:rgba(var(--accent-rgb),.34); stroke:var(--accent); }
+
+.pl-zone circle{ fill:var(--ink-4); transition:fill .25s; }
+.pl-zone text{
+  fill:var(--ink-4); font-size:.5px; text-anchor:middle;
+  font-family:var(--sans); pointer-events:none; transition:fill .25s;
+}
+.pl-zone.is-seen circle{ fill:#2ecc71; }
+.pl-zone.is-seen text{ fill:var(--ink-2); }
+
+.pl-cam{ cursor:pointer; }
+.pl-cam circle{ fill:var(--accent); stroke:var(--bg-1); stroke-width:.1; transition:r .2s; }
+.pl-cam text{
+  fill:var(--accent-ink); font-size:.72px; font-weight:700; text-anchor:middle;
+  font-family:var(--latin); pointer-events:none;
+}
+.pl-cam.is-on circle{ stroke:var(--ink); stroke-width:.14; }
+
+/* ---------- coverage panel ---------- */
+.cov{ display:grid; gap:10px; }
+.cov__big{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.cov__big b{ font-family:var(--latin); font-size:2rem; font-weight:800; color:var(--accent); line-height:1; }
+.cov__big span{ font-size:.8125rem; color:var(--ink-3); font-weight:600; }
+.meter{ height:8px; border-radius:999px; background:rgba(var(--ink-rgb),.10); overflow:hidden; }
+.meter__fill{
+  display:block; height:100%; width:0; border-radius:999px;
+  background:#e0685e; transition:width .5s var(--e-out), background .4s;
+}
+.meter__fill.is-c{ background:#e0a95e; }
+.meter__fill.is-b{ background:#5ec4e0; }
+.meter__fill.is-a{ background:#2ecc71; }
+
+.zonecols{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:4px; }
+.zonecols__h{ font-size:.6875rem; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-4); margin-bottom:6px; }
+.zonelist{ display:grid; gap:4px; }
+.zone{ font-size:.75rem; padding:4px 9px; border-radius:999px; display:inline-block; width:fit-content; }
+.zone.is-ok{ background:rgba(46,204,113,.14); color:#1e8449; }
+.zone.is-bad{ background:rgba(224,104,94,.13); color:#c0392b; }
+.zone.is-none{ color:var(--ink-4); padding-inline:0; }
+:root[data-theme="dark"] .zone.is-ok{ color:#6fe3a3; }
+:root[data-theme="dark"] .zone.is-bad{ color:#f0a8a8; }
+
+/* ---------- camera rows ---------- */
+.camrow{
+  border:1px solid var(--line); border-radius:12px; padding:12px;
+  display:grid; gap:9px; margin-bottom:10px; transition:border-color .3s;
+}
+.camrow.is-on{ border-color:rgba(var(--accent-rgb),.55); }
+.camrow__head{ display:flex; align-items:center; gap:9px; }
+.camrow__n{
+  width:22px; height:22px; flex:none; border-radius:50%;
+  display:grid; place-items:center; background:var(--accent); color:var(--accent-ink);
+  font-family:var(--latin); font-size:.6875rem; font-weight:700;
+}
+.camrow__pick{ flex:1; min-width:0; font-size:.8125rem !important; padding:9px 12px !important; }
+.camrow__x{
+  width:26px; height:26px; flex:none; border-radius:50%; font-size:1.1rem; line-height:1;
+  color:var(--ink-4); border:1px solid var(--line); transition:color .3s, border-color .3s;
+}
+.camrow__x:hover{ color:#e0685e; border-color:rgba(224,104,94,.5); }
+.camrow__spec{ display:flex; flex-wrap:wrap; gap:6px; font-size:.6875rem; color:var(--ink-3); }
+.camrow__spec span{ padding:3px 8px; border-radius:999px; background:rgba(var(--ink-rgb),.06); font-family:var(--latin); }
+.camrow__tag{ font-family:var(--sans) !important; }
+.camrow__aim{ display:flex; align-items:center; gap:10px; font-size:.75rem; color:var(--ink-3); }
+.camrow__aim input{ flex:1; }
+
+/* ---------- system + CTA ---------- */
+.systotal{ margin-top:14px; font-size:.9375rem; text-align:end; }
+.systotal b{ font-family:var(--latin); font-size:1.25rem; font-weight:800; color:var(--accent); }
+.gcta{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+.gcta .btn:disabled{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
+
+@media (max-width:900px){
+  .glayout{ grid-template-columns:1fr; }
+  .planwrap{ aspect-ratio:4/3; }
+}
+@media (max-width:520px){
+  .zonecols{ grid-template-columns:1fr; }
+  .gtoolbar{ justify-content:stretch; }
+  .gtoolbar__acts{ width:100%; }
+  .gtoolbar__acts .btn{ flex:1; }
+}
+
+/* Printing the summary is a real deliverable — the sales team works from it.
+   Everything that is navigation or interaction goes; the plan, the numbers
+   and the parts list stay. */
+@media print{
+  .nav, .menu, .strip, .footer, .gtoolbar, .gcta, .promo, .cookiebar,
+  .vga, .skip, .grain, .gplan__hint, .camrow__x, .camrow__aim{ display:none !important; }
+  body{ background:#fff; color:#000; }
+  .gplan, .card{ border-color:#ccc; break-inside:avoid; }
+  .glayout{ grid-template-columns:1fr 1fr; }
+  .pl-cone{ fill:rgba(0,0,0,.12); stroke:#666; }
+}
+
+/* =========================================================================
+   PROMO BAR (promo.js) — every page except the planner
+   ========================================================================= */
+.promo{
+  position:fixed; z-index:126;
+  inset-inline-end:clamp(12px,3vw,24px);
+  bottom:calc(clamp(12px,3vw,24px) + var(--cobar-h, 0px) + var(--cookiebar-h, 0px));
+  max-width:min(92vw, 360px);
+  opacity:0; transform:translateY(14px); pointer-events:none;
+  transition:opacity .4s var(--e-out), transform .5s var(--e-out), bottom .45s var(--e-out);
+}
+.promo.is-on{ opacity:1; transform:none; }
+.promo.is-on .promo__in{ pointer-events:auto; }
+.is-menu .promo{ opacity:0; transform:translateY(14px); }
+
+.promo__in{
+  position:relative;
+  display:flex; align-items:center; gap:12px;
+  padding:13px 16px; border-radius:14px;
+  background:var(--bg-3); border:1px solid var(--line-2);
+  box-shadow:0 20px 46px -18px rgba(0,0,0,.55);
+}
+.promo__icon{ font-size:1.4rem; line-height:1; flex:none; }
+.promo__text{ min-width:0; display:grid; gap:2px; }
+.promo__title{ font-size:.8125rem; font-weight:700; color:var(--ink); }
+.promo__body{ font-size:.75rem; color:var(--ink-3); line-height:1.5; }
+.promo__cta{ flex:none; }
+.promo__x{
+  position:absolute; inset-block-start:4px; inset-inline-end:6px;
+  width:22px; height:22px; border-radius:50%;
+  font-size:1.05rem; line-height:1; color:var(--ink-4);
+  transition:color .3s;
+}
+.promo__x:hover{ color:var(--ink-2); }
+
+@media (max-width:520px){
+  .promo{ inset-inline:12px; max-width:none; }
+  .promo__in{ padding:12px 14px; }
+}
+
+/* ---------- legal pages ---------- */
+.legal-shell{ max-width:760px; }
+.legal-card{
+  margin-top:26px; padding:clamp(18px,2.3vw,28px);
+  border:1px solid var(--line); background:var(--bg-1); border-radius:18px;
+  display:grid; gap:14px;
+}
+/* terms/refund/shipping have no footer of their own, so this is the only
+   route from them to the privacy policy and to the cookie choice. Being able
+   to withdraw consent has to be reachable from every page, not just the ones
+   that happen to have a footer column. */
+.legal-links{
+  margin-top:22px; display:flex; flex-wrap:wrap; gap:8px 22px;
+  font-size:.8125rem;
+}
+.legal-links a{
+  color:var(--accent); text-decoration:underline; text-underline-offset:3px;
+}
+
 /* ---------- quantity stepper ---------- */
 .step2{
   display:inline-grid; grid-auto-flow:column; align-items:center;
@@ -159,8 +472,29 @@ html[lang="ar"] .pcard__cat{ font-family:var(--arabic); font-size:.75rem; letter
 .field > label{ font-size:.8125rem; color:var(--ink-3); font-weight:500; }
 .frow{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
-input[type="text"], input[type="email"], input[type="password"],
-input[type="search"], input[type="tel"], select, textarea{
+/* SUBTRACTIVE, NOT ADDITIVE — and that is the whole point.
+
+   This used to be a list of the types it applied TO:
+     input[type="text"], input[type="email"], input[type="password"], ...
+
+   `type` is optional on <input>; leaving it off gives you a text field. So
+   any input written without one — and sixteen on this site were, including
+   the customer's NAME and PHONE on the checkout form — matched none of those
+   selectors and rendered as a raw browser default: wrong font, wrong height,
+   white box, square corners, sitting directly under a properly themed
+   <select> and <textarea>. That is why "not all input fields look the same".
+
+   Written this way the rule covers every text-like input automatically, and
+   the exclusions are the controls that genuinely must look different:
+   checkbox and radio are drawn by hand further down, file has its own button,
+   and the button-ish types are buttons. A new field added later is styled
+   whether or not whoever adds it remembers to write type="text".
+
+   date stays covered for the timesheet's day picker: the native control
+   themes itself from :root { color-scheme } in styles.css, so its calendar
+   popup and icon follow the light/dark switch without a filter hack. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):not([type="hidden"]),
+select, textarea{
   width:100%; padding:13px 15px;
   font:inherit; font-size:.9375rem; color:var(--ink);
   background:var(--bg-2); border:1px solid var(--line-2); border-radius:10px;
@@ -189,6 +523,102 @@ input:focus, select:focus, textarea:focus{
   box-shadow:0 0 0 3px rgba(var(--accent-rgb),.13);
 }
 input:disabled, textarea:disabled, select:disabled{ opacity:.55; cursor:not-allowed; }
+
+/* ---------- autofilled fields ----------
+
+   THIS is why the checkout phone box looked wrong while the one above it
+   looked right. Nothing was missing from the rules above — Chrome simply
+   paints its own background straight over an autofilled input, and there is
+   no property that overrides it. Name, phone and email are exactly the fields
+   a browser fills, so the form ended up half themed and half pale yellow.
+
+   The fix is the long-standing one: an inset box-shadow big enough to cover
+   the field repaints it, because shadows draw above the autofill layer.
+   -webkit-text-fill-color does the same job for the text, which `color`
+   cannot reach either. The absurd transition-delay is deliberate — it parks
+   Chrome's fade-in animation so far in the future that it never runs, which
+   stops the field flashing the old colour for a moment on load. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+textarea:-webkit-autofill,
+select:-webkit-autofill{
+  -webkit-text-fill-color:var(--ink);
+  -webkit-box-shadow:0 0 0 1000px var(--bg-2) inset;
+  box-shadow:0 0 0 1000px var(--bg-2) inset;
+  caret-color:var(--ink);
+  border:1px solid var(--line-2);
+  transition:background-color 9999s ease-out 0s;
+}
+/* Focus needs BOTH shadows in one declaration: the fill that hides the
+   autofill background, and the focus ring. Listing only the ring would let
+   the yellow back through the moment the field is focused. */
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill:focus{
+  -webkit-box-shadow:0 0 0 1000px var(--bg-2) inset, 0 0 0 3px rgba(var(--accent-rgb),.13);
+  box-shadow:0 0 0 1000px var(--bg-2) inset, 0 0 0 3px rgba(var(--accent-rgb),.13);
+  border-color:rgba(var(--accent-rgb),.65);
+}
+
+/* ---------- file input ----------
+
+   Deliberately excluded from the rule above — a file input is a button plus a
+   filename, not a text box, so the shared padding and height do the wrong
+   thing to it. Excluded and then never styled, though, which is why the
+   catalogue's image picker was a grey OS-default "Choose File" sitting under
+   properly themed fields.
+
+   ::file-selector-button is the standard selector; the -webkit- alias covers
+   Safari before 16.4. Both carry the same declarations because a browser that
+   understands only one of them still has to get the whole button. */
+   The base rule still themes any file input that is used plainly, so a new
+   one added later is not naked. The catalogue's picker goes further and hides
+   the native control behind .filefield, because its BUTTON is drawn by the
+   browser and its "Choose File" label cannot be translated — see the note in
+   account.html. */
+input[type="file"]{
+  width:100%; font:inherit; font-size:.8125rem; color:var(--ink-3);
+  background:var(--bg-2); border:1px solid var(--line-2); border-radius:10px;
+  padding:8px; cursor:pointer;
+  transition:border-color .3s, background .3s, box-shadow .3s;
+}
+input[type="file"]:hover{ border-color:var(--ink-4); }
+input[type="file"]::file-selector-button{
+  font:inherit; font-size:.8125rem; font-weight:700;
+  margin-inline-end:12px; padding:9px 18px;
+  background:var(--accent); color:var(--accent-ink);
+  border:1px solid var(--accent); border-radius:999px;
+  cursor:pointer; transition:filter .3s;
+}
+input[type="file"]::file-selector-button:hover{ filter:brightness(1.08); }
+input[type="file"]::-webkit-file-upload-button{
+  font:inherit; font-size:.8125rem; font-weight:700;
+  margin-inline-end:12px; padding:9px 18px;
+  background:var(--accent); color:var(--accent-ink);
+  border:1px solid var(--accent); border-radius:999px;
+  cursor:pointer;
+}
+
+/* The translated picker: our own button, the browser's own input.
+
+   The input is NOT display:none — that would take it out of the tab order and
+   hide it from assistive tech, and the <label> would still work while the
+   control it names had become unreachable by keyboard. Clipping it to a
+   single pixel keeps it focusable and announced; the focus ring is drawn on
+   the label instead, via :focus-within. */
+.filefield{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.filefield__input{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+.filefield__btn{ cursor:pointer; flex:none; }
+.filefield:focus-within .filefield__btn{
+  outline:2px solid var(--accent); outline-offset:2px;
+}
+.filefield__name{
+  font-size:.8125rem; color:var(--ink-3); min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
 
 .btn--wide{ width:100%; }
 .btn:disabled{ opacity:.6; cursor:progress; transform:none; box-shadow:none; }
@@ -420,6 +850,22 @@ input:disabled, textarea:disabled, select:disabled{ opacity:.55; cursor:not-allo
    actually loaded, so a blocked script leaves no empty gap. */
 .gauth{ display:grid; justify-items:center; gap:12px; margin-block:4px 20px; }
 .gauth[hidden]{ display:none; }
+
+/* The "Continue with Google" button.
+
+   Ours, not an iframe Google renders — the Google Identity Services widget
+   and its .gbtn-host container are gone along with the second sign-in stack;
+   see the note in public/account.js. So it takes the site's own .btn styling
+   and follows the theme like everything else, which is what the old rendered
+   widget could never quite be made to do.
+
+   That is allowed, and the distinction matters. Google's branding rules
+   govern how the button LOOKS — its own logo, its own wording — and the
+   markup below follows them. What must never be built is a form of ours that
+   collects a Google password; this only opens Google's real page in a popup,
+   and the password is typed there. */
+.gbtn{ max-width:320px; }
+.gbtn svg{ flex:none; }
 .gauth__btn{ min-height:48px; display:flex; justify-content:center; align-items:center; width:100%; }
 
 /* Safety net, and it earns its keep.
@@ -564,7 +1010,85 @@ input:disabled, textarea:disabled, select:disabled{ opacity:.55; cursor:not-allo
 .stat__v.is-pos{ color:#5BD1A0; }
 .stat__v.is-neg{ color:#F0A8A8; }
 
-.tablewrap{ overflow-x:auto; }
+/* =========================================================================
+   HORIZONTALLY SCROLLABLE TABLES
+
+   These always scrolled. The problem was that nobody could tell.
+
+   Mobile Safari and Chrome draw OVERLAY scrollbars: invisible until a scroll
+   is already under way. As an affordance that is circular — you have to know
+   you can scroll in order to discover that you can — and on the admin
+   catalogue the consequence was concrete: six columns in a 789px table inside
+   a 293px viewport, with Edit and Hide in the last column, 496px off-screen
+   and no indication they existed at all. In RTL that column is off the LEFT
+   edge, which is the direction people are least likely to try.
+
+   So two cues, both permanent:
+
+   1. A real scrollbar. Giving ::-webkit-scrollbar an explicit height opts out
+      of the overlay style and makes the bar always visible, on touch devices
+      as well as desktop. scrollbar-width/color do the same for Firefox.
+
+   2. Scroll shadows. The two `local` gradient layers scroll WITH the content
+      and the two `scroll` layers stay pinned to the edges, so a shadow shows
+      only on a side that has more content behind it — it appears when there
+      is something to reach and disappears at the end. Works unchanged in RTL,
+      because it follows the scroll position rather than a hard-coded side.
+   ========================================================================= */
+.tablewrap{
+  overflow-x:auto;
+  /* stops a horizontal swipe on the table from turning into a browser
+     back-navigation once it hits the end */
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  /* room for the bar, so it never sits on top of the last row */
+  padding-bottom:10px;
+
+  scrollbar-width:thin;
+  scrollbar-color:rgba(var(--ink-rgb),.38) rgba(var(--ink-rgb),.09);
+
+  background:
+    linear-gradient(to right, var(--bg-1) 40%, rgba(var(--bg-rgb),0)) left center,
+    linear-gradient(to left,  var(--bg-1) 40%, rgba(var(--bg-rgb),0)) right center,
+    radial-gradient(farthest-side at 0 50%,   rgba(var(--ink-rgb),.20), rgba(var(--ink-rgb),0)) left center,
+    radial-gradient(farthest-side at 100% 50%, rgba(var(--ink-rgb),.20), rgba(var(--ink-rgb),0)) right center;
+  background-repeat:no-repeat;
+  background-size:38px 100%, 38px 100%, 15px 100%, 15px 100%;
+  background-attachment:local, local, scroll, scroll;
+}
+.tablewrap::-webkit-scrollbar{ height:9px; -webkit-appearance:none; }
+.tablewrap::-webkit-scrollbar-track{
+  background:rgba(var(--ink-rgb),.09); border-radius:999px;
+}
+.tablewrap::-webkit-scrollbar-thumb{
+  background:rgba(var(--ink-rgb),.38); border-radius:999px;
+  border:2px solid transparent; background-clip:padding-box;
+}
+.tablewrap::-webkit-scrollbar-thumb:hover,
+.tablewrap::-webkit-scrollbar-thumb:active{
+  background:rgba(var(--ink-rgb),.55); background-clip:padding-box;
+}
+
+/* The drawn scroll bar, built by initScrollBars() in site.js and inserted as
+   a sibling immediately after each .tablewrap. It exists because iOS Safari
+   will not render a styled ::-webkit-scrollbar, so on an iPhone the rules
+   above produce no visible bar at all — see the note in site.js.
+
+   Purely a readout: pointer-events are off, so a touch here scrolls the page
+   as it would anywhere else rather than being swallowed by a fake control
+   that does not drag. */
+.hscroll{
+  position:relative; height:5px; border-radius:999px;
+  background:rgba(var(--ink-rgb),.10);
+  margin-block:2px 0;
+  pointer-events:none;
+}
+.hscroll[hidden]{ display:none; }
+.hscroll i{
+  position:absolute; inset-block:0; inset-inline-start:0;
+  border-radius:999px; background:rgba(var(--ink-rgb),.42);
+}
+
 table.att{ width:100%; border-collapse:collapse; min-width:520px; }
 table.att th, table.att td{
   text-align:start; padding:12px 14px; font-size:.8125rem;
@@ -583,7 +1107,80 @@ table.att tr.is-today td{ background:rgba(var(--accent-rgb),.05); }
 .tag--short{ border-color:rgba(240,168,168,.45); color:#F0A8A8; }
 .tag--overtime{ border-color:rgba(var(--accent-rgb),.5); color:var(--accent); }
 .tag--open{ border-color:rgba(var(--accent-rgb),.5); color:var(--accent); }
+/* Absent had no tag of its own and fell back to the neutral border, which put
+   the one row a manager most needs to see in the quietest style on the page. */
+.tag--absent{ border-color:rgba(240,168,168,.35); color:#F0A8A8; opacity:.85; }
 .att__note{ font-size:.6875rem; color:var(--ink-4); white-space:normal; }
+table.att td b{ color:var(--ink); font-weight:600; }
+table.att td.num.is-pos{ color:#5BD1A0; }
+table.att td.num.is-neg{ color:#F0A8A8; }
+
+/* =========================================================================
+   PERFORMANCE — the orders-per-day bars
+
+   Divs, not a charting library. Twelve to ninety bars with a tooltip is not
+   worth 80KB of JavaScript on a page that already loads a payment SDK, and a
+   bar whose height is a percentage needs no layout maths at all.
+   ========================================================================= */
+.spark{
+  display:flex; align-items:flex-end; gap:3px;
+  height:130px; margin-block:6px 14px;
+  padding-block-start:14px;              /* room for the count above a full bar */
+  overflow-x:auto; overscroll-behavior-x:contain;
+}
+.spark__bar{
+  position:relative; flex:1 1 6px; min-width:6px;
+  background:linear-gradient(to top, rgba(var(--accent-rgb),.85), rgba(var(--accent-rgb),.35));
+  border-radius:3px 3px 0 0;
+  transition:background .2s ease;
+}
+.spark__bar:hover{ background:var(--accent); }
+/* The count sits above the bar, and only when there is room for it — below
+   about 18px per bar the numbers collide into an unreadable smear. */
+.spark__bar span{
+  position:absolute; inset-block-end:100%; inset-inline:0;
+  text-align:center; font-family:var(--latin); font-size:.625rem;
+  color:var(--ink-4); line-height:1.4;
+}
+@media (max-width:720px){ .spark__bar span{ display:none; } }
+
+/* =========================================================================
+   TEAM — the administrator's timesheet controls
+   ========================================================================= */
+.teambar{
+  display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px;
+  margin-block:4px 18px;
+}
+.teambar .field{ margin:0; min-width:150px; }
+.teambar .btn{ flex:none; }
+
+/* The one-line answer, above the table rather than inside it: a manager
+   opening this tab wants "yes" or "look at these" before any numbers. */
+.verdict{
+  display:flex; align-items:center; gap:9px;
+  margin-block:0 16px; padding:11px 15px; border-radius:12px;
+  font-size:.875rem; color:var(--ink-2);
+  background:var(--bg-1); border:1px solid var(--line-2);
+}
+.verdict::before{
+  content:""; width:7px; height:7px; border-radius:50%;
+  background:var(--ink-4); flex:none;
+}
+.verdict.is-good{ border-color:rgba(91,209,160,.45); color:#5BD1A0; }
+.verdict.is-good::before{ background:#5BD1A0; }
+.verdict.is-bad{ border-color:rgba(240,168,168,.45); color:#F0A8A8; }
+.verdict.is-bad::before{ background:#F0A8A8; }
+
+.c-thumb-cell{ width:64px; }
+.c-thumb{
+  display:block; width:56px; height:56px; object-fit:cover;
+  border-radius:10px; border:1px solid var(--line-2); background:var(--bg-1);
+}
+.c-thumb--empty{
+  display:grid; place-items:center; width:56px; height:56px; padding:4px;
+  border-radius:10px; border:1px dashed var(--line-2); color:var(--ink-4);
+  font-size:.6875rem; text-align:center; line-height:1.15;
+}
 
 /* =========================================================================
    CHECKOUT BAR
@@ -596,12 +1193,16 @@ table.att tr.is-today td{ background:rgba(var(--accent-rgb),.05); }
    ========================================================================= */
 .cobar{
   position:fixed; z-index:96;
-  inset-inline:0; inset-block-end:0;
+  inset-inline:0;
+  /* physical `bottom`, for the reason given on .toast below: the cookie bar
+     publishes --cookiebar-h while it is up, and this has to re-resolve when
+     it goes down. */
+  bottom:var(--cookiebar-h, 0px);
   padding-inline:clamp(12px,3vw,24px);
   padding-block-end:calc(clamp(14px,2.4vw,22px) + env(safe-area-inset-bottom));
   pointer-events:none;
   opacity:0; transform:translateY(130%);
-  transition:opacity .3s var(--e-out), transform .5s var(--e-out);
+  transition:opacity .3s var(--e-out), transform .5s var(--e-out), bottom .45s var(--e-out);
 }
 .cobar.is-on{ opacity:1; transform:none; }
 .cobar.is-on .cobar__in{ pointer-events:auto; }
@@ -630,8 +1231,8 @@ table.att tr.is-today td{ background:rgba(var(--accent-rgb),.05); }
   /* physical `bottom`, not `inset-block-end`: a var() inside calc() on the
      logical property does not re-resolve when --cobar-h changes. Same value
      either way — the page is horizontal-tb in both languages. */
-  bottom:calc(clamp(84px,11vw,100px) + var(--cobar-h, 0px));
-  inset-inline-start:50%;
+  bottom:calc(clamp(84px,11vw,100px) + var(--cobar-h, 0px) + var(--cookiebar-h, 0px));
+  left:50%; right:auto;
   transform:translate(-50%, 14px);
   max-width:min(92vw, 420px);
   padding:12px 20px; border-radius:999px;
@@ -664,18 +1265,38 @@ table.att tr.is-today td{ background:rgba(var(--accent-rgb),.05); }
   .pcard__body{ padding:14px; }
   .pcard__foot{ flex-direction:column; align-items:stretch; gap:10px; }
   .pcard__buy .btn, .pcard__buy .step2{ width:100%; }
+  .product-card{ grid-template-columns:1fr; }
+  .product-card__meta{ grid-template-columns:1fr; }
   .step2{ display:grid; grid-template-columns:1fr auto 1fr; }
   .toolbar .field--sort{ min-width:0; flex:1 1 100%; }
   .cart{ width:100%; }
   .auth__body{ padding:22px 18px; }
   /* physical `bottom` for the same reason as the base rule, and it has to
-     keep the --cobar-h term: this declaration wins over the one above it. */
-  .toast{ bottom:calc(76px + var(--cobar-h, 0px)); }
+     keep BOTH offset terms: this declaration wins over the one above it, so
+     dropping either one puts the toast back under the bar it was clearing. */
+  .toast{ bottom:calc(76px + var(--cobar-h, 0px) + var(--cookiebar-h, 0px)); }
 
   /* Matches the trimmed nav controls in styles.css — five of these plus the
      logo have to fit a 320px bar without pushing the burger off screen. */
   .iconbtn{ width:34px; height:34px; }
   .iconbtn__count{ inset-block-start:-4px; inset-inline-end:-4px; min-width:17px; height:17px; font-size:.625rem; }
+
+  /* Make the wide admin tables narrower before asking anyone to scroll them.
+
+     Measured on a 375px phone, the catalogue table was 789px against a 293px
+     window — 496px hidden, with Edit and Hide in the last column. Most of that
+     width was avoidable rather than necessary: `white-space:nowrap` on every
+     cell forced "كاميرات HD (Analog)" to hold a 167px column open, and the
+     desktop cell padding cost another ~70px across six columns.
+
+     Letting the text-bearing cells wrap and tightening the padding takes the
+     table down by roughly a third. What is left still scrolls — and now says
+     so, via the permanent scrollbar and the edge shadows on .tablewrap. */
+  table.att{ min-width:0; }
+  table.att th, table.att td{ padding:10px 8px; }
+  /* Numbers, buttons and the on/off pill still must not break mid-token. */
+  table.att td:not(.num):not(.c-thumb-cell), table.att th{ white-space:normal; }
+  table.att td .att__note{ white-space:normal; word-break:break-word; }
 }
 
 /* =========================================================================

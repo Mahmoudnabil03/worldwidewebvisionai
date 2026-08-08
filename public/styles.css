@@ -106,6 +106,15 @@
 :root{ color-scheme: dark; }
 :root[data-theme="light"]{ color-scheme: light; }
 
+/* Everything the browser draws for itself — the text caret, the tick in a
+   native checkbox, a range thumb, the focus ring on controls we have not
+   restyled — defaults to the browser's own blue, which is not this brand's
+   blue and is visibly a different colour sitting next to it. One declaration
+   points all of it at the accent instead. It costs nothing where a control is
+   already custom-drawn (the checkboxes and radios in app.css are), and fixes
+   every native one we have not thought about. */
+:root{ accent-color: var(--accent); }
+
 html[lang="en"]{ --sans: var(--latin); }
 html[lang="ar"]{ --sans: var(--arabic); }
 
@@ -362,19 +371,44 @@ html[lang="ar"] .eyebrow{ font-family:var(--arabic); font-size:.8125rem; text-tr
 :root[data-theme="light"] .theme .theme__moon{ opacity:1; transform:none; }
 :root[data-theme="light"] .theme .theme__sun { opacity:0; transform:rotate(45deg) scale(.7); }
 
+/* The burger: three bars, centred by layout rather than by arithmetic.
+
+   The bars used to be absolutely positioned against hard-coded offsets
+   (top:17px / bottom:17px), which meant every size change needed a matching
+   pair of overrides — and the 640px breakpoint duly carried them. Two bars
+   with two magic numbers is survivable; three is not, and any size the
+   overrides did not anticipate (a 44px tap target, a zoomed page, a browser
+   with a different default border) put the bars off centre.
+
+   Centring them with flex removes the arithmetic entirely: whatever the
+   button's size, the stack sits in the middle of its content box, and
+   border-box sizing keeps the 1px border symmetric on all four sides. Only
+   the button's own width and height change per breakpoint now.
+
+   The X on open is the one place a number is still needed, and it is derived
+   rather than guessed: moving a bar by exactly one gap plus one bar height
+   lands it on the middle bar's centre line. */
 .burger{
-  display:none; width:42px; height:42px; padding:0;
-  border:1px solid var(--line); border-radius:50%; position:relative;
+  --bar-w:16px;
+  --bar-h:2px;
+  --bar-gap:4px;
+  display:none;                       /* -> inline-flex at <=900px */
+  flex-direction:column; align-items:center; justify-content:center;
+  gap:var(--bar-gap);
+  width:38px; height:38px; padding:0; flex:none;
+  color:var(--ink);
+  border:1px solid var(--line-2); border-radius:999px;
+  transition:color .3s, border-color .3s, background .3s;
 }
+.burger:hover{ border-color:rgba(var(--accent-rgb),.6); background:var(--accent-dim); }
 .burger span{
-  position:absolute; inset-inline-start:50%; width:15px; height:1.5px; background:var(--ink);
-  transform:translateX(-50%);
-  transition:transform .4s var(--e-out);
+  display:block; width:var(--bar-w); height:var(--bar-h);
+  background:currentColor; border-radius:2px;
+  transition:transform .4s var(--e-out), opacity .25s var(--e-out);
 }
-.burger span:nth-child(1){ top:17px; }
-.burger span:nth-child(2){ bottom:17px; }
-.is-menu .burger span:nth-child(1){ transform:translate(-50%,4px) rotate(45deg); }
-.is-menu .burger span:nth-child(2){ transform:translate(-50%,-4px) rotate(-45deg); }
+.is-menu .burger span:nth-child(1){ transform:translateY(calc(var(--bar-gap) + var(--bar-h))) rotate(45deg); }
+.is-menu .burger span:nth-child(2){ opacity:0; transform:scaleX(.1); }
+.is-menu .burger span:nth-child(3){ transform:translateY(calc(-1 * (var(--bar-gap) + var(--bar-h)))) rotate(-45deg); }
 
 /* The nav bar sits ABOVE this (z-index 100) so the burger stays reachable to
    close it, which means the panel has to keep its own content out from under
@@ -786,15 +820,16 @@ html[lang="ar"] .step__kicker{ font-family:var(--arabic); letter-spacing:normal;
 
    --cobar-h is how much room the shop's checkout bar is taking at the bottom
    of the screen right now (0 when it is down, and always 0 on the landing
-   page, which has no such bar). Physical `bottom` rather than
-   inset-block-end: a var() inside calc() on the logical property does not
-   re-resolve when the variable changes, and the two are identical in a
+   page, which has no such bar), and --cookiebar-h the same for the cookie
+   bar, which is up on a first visit on every page. Physical `bottom` rather
+   than inset-block-end: a var() inside calc() on the logical property does
+   not re-resolve when the variable changes, and the two are identical in a
    horizontal writing mode anyway.
    ========================================================================= */
 .vga{
   position:fixed; z-index:97;
   inset-inline-end:clamp(16px,3vw,30px);
-  bottom:calc(clamp(16px,3vw,30px) + var(--cobar-h, 0px));
+  bottom:calc(clamp(16px,3vw,30px) + var(--cobar-h, 0px) + var(--cookiebar-h, 0px));
   transition:bottom .45s var(--e-out);
 }
 
@@ -933,7 +968,7 @@ html[lang="ar"].js [data-split] .w{ padding-bottom:.26em; margin-bottom:-.26em; 
   .nav__links{ display:none; }
   .nav__end .btn{ display:none; }
   .navlink-account{ display:none; }
-  .burger{ display:block; }
+  .burger{ display:inline-flex; }
   .process__grid{ grid-template-columns:1fr; gap:48px; }
   .process__sticky{ position:static; }
   .stepviz{ width:min(100%,200px); }
@@ -963,9 +998,9 @@ html[lang="ar"].js [data-split] .w{ padding-bottom:.26em; margin-bottom:-.26em; 
   .strip__in{ gap:6px 16px; }
   .lang{ width:38px; height:34px; }
   .theme{ width:34px; height:34px; }
-  .burger{ width:36px; height:36px; }
-  .burger span:nth-child(1){ top:14px; }
-  .burger span:nth-child(2){ bottom:14px; }
+  /* Only the box shrinks. The bars stay centred on their own — that is the
+     point of the flex layout above. */
+  .burger{ width:34px; height:34px; --bar-w:15px; }
   .menu{ padding-top:84px; }
 
   /* price rows stack: name over spec, price on its own line */
@@ -973,6 +1008,73 @@ html[lang="ar"].js [data-split] .w{ padding-bottom:.26em; margin-bottom:-.26em; 
   .prod__name{ grid-column:1; }
   .prod__price{ grid-column:2; grid-row:1 / span 2; align-self:center; }
   .prod__spec{ grid-column:1; }
+}
+
+/* =========================================================================
+   COOKIE BAR
+
+   Built by public/consent.js, on every page — which is why it lives here and
+   not in app.css: the landing page and the policy pages load styles.css only.
+
+   It is the fourth thing pinned to the bottom of the screen, after the
+   checkout bar, the assistant fab and the toast, and it outranks all three:
+   a consent choice that is hidden behind a shop widget is not a choice. So
+   it publishes --cookiebar-h the way .cobar publishes --cobar-h, and the
+   other three add it to their own offset rather than guess a gap. Down, the
+   variable is 0px and nothing moves.
+
+   Deliberately NOT a modal. No scrim, no focus trap, no blocked scrolling.
+   Under the notice regime there is nothing to decide before browsing, and
+   under the opt-in one a wall would be pressure rather than a question — and
+   a consent obtained under pressure is not consent. The page stays usable
+   with the bar up and with it ignored.
+   ========================================================================= */
+.cookiebar{
+  position:fixed; z-index:128;
+  inset-inline:0;
+  /* physical `bottom`, matching .cobar/.toast/.vga: a var() inside calc() on
+     the logical property does not re-resolve when the variable changes. */
+  bottom:0;
+  padding:clamp(12px,3vw,20px);
+  padding-bottom:calc(clamp(12px,3vw,20px) + env(safe-area-inset-bottom));
+  pointer-events:none;
+  opacity:0; transform:translateY(120%);
+  transition:opacity .35s var(--e-out), transform .5s var(--e-out);
+}
+.cookiebar.is-on{ opacity:1; transform:none; }
+.cookiebar.is-on .cookiebar__in{ pointer-events:auto; }
+/* the burger overlay (z-index 99) is a full-screen takeover; do not float
+   over it, the same way .cobar does not */
+.is-menu .cookiebar{ opacity:0; transform:translateY(120%); }
+
+.cookiebar__in{
+  display:flex; align-items:center; gap:clamp(14px,2.5vw,26px);
+  inline-size:min(100%, 780px); margin-inline:auto;
+  padding:clamp(14px,2vw,18px) clamp(16px,2.4vw,22px);
+  border-radius:16px;
+  background:var(--bg-3); border:1px solid var(--line-2);
+  box-shadow:0 22px 50px -18px rgba(0,0,0,.7);
+}
+
+.cookiebar__text{ min-width:0; display:grid; gap:4px; }
+.cookiebar__title{ font-size:.875rem; font-weight:700; color:var(--ink); }
+.cookiebar__body{ font-size:.8125rem; line-height:1.7; color:var(--ink-2); }
+.cookiebar__link{
+  color:var(--accent); text-decoration:underline; text-underline-offset:3px;
+  white-space:nowrap;
+}
+
+/* Both buttons keep the same size and weight. The visual difference between
+   .btn and .btn--ghost is the only one there is, and it is the minimum the
+   design language allows — nudging someone toward Accept by making Reject
+   small or grey would defeat the point of asking. */
+.cookiebar__actions{ flex:none; display:flex; gap:9px; }
+.cookiebar__actions .btn{ white-space:nowrap; }
+
+@media (max-width:720px){
+  .cookiebar__in{ flex-direction:column; align-items:stretch; gap:14px; }
+  .cookiebar__actions{ display:grid; grid-template-columns:1fr 1fr; }
+  .cookiebar__actions .btn{ width:100%; }
 }
 
 /* =========================================================================

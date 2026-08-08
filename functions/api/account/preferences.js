@@ -51,6 +51,6 @@ export const onRequestPost = handle(async (context) => {
 
   return json({
     ok: true,
-    user: publicUser(Object.assign({}, user, { name, phone, marketing, newsletter, lang }))
+    user: publicUser(Object.assign({}, user, { name, phone, marketing, newsletter, lang }), context.env)
   });
 });

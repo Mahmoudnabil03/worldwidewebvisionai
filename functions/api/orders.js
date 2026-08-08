@@ -21,6 +21,7 @@ import {
 } from '../../lib/orders.js';
 import { notifyWhatsApp, recordNotify } from '../../lib/whatsapp.js';
 import { sendMetaPurchaseEvent } from '../../lib/meta.js';
+import { loadCatalog } from '../../lib/products.js';
 
 export const onRequestPost = handle(async (context) => {
   const { request, env } = context;
@@ -58,7 +59,11 @@ export const onRequestPost = handle(async (context) => {
   }
 
   /* --- what, priced here and only here --- */
-  const { items, subtotal } = priceCart(body.cart);
+  /* Prices come from D1 when the products table has rows, and from
+     public/catalog.js if it does not — see lib/products.js. Either way they
+     come from the SERVER; the cart only ever supplied ids and quantities. */
+  const catalog = await loadCatalog(d1);
+  const { items, subtotal } = priceCart(body.cart, catalog.resolve);
   const shipping = shippingFor(env);
   const total = subtotal + shipping;
 
@@ -117,20 +122,35 @@ export const onRequestPost = handle(async (context) => {
     notifyWhatsApp(env, text, null, templateParams).then((result) => recordNotify(d1, id, result))
   );
 
-  const requestUrl = request.url || '';
-  context.waitUntil(
-    sendMetaPurchaseEvent(env, {
-      ...order,
-      total,
-      value: total,
-      subtotal,
-      shipping
-    }, requestUrl).then((result) => {
-      if (!result || result.ok !== true) {
-        console.info('meta purchase skipped or failed', result);
-      }
-    })
-  );
+  /* Advertising measurement, only if the customer allowed it.
+
+     This is the half of consent a browser cannot enforce: the relay below
+     runs here, on the server, and reaches Meta whether or not the pixel was
+     ever loaded — that is the entire point of it, and it is also why it has
+     to be checked here. public/consent.js decides, public/shop.js sends the
+     answer as `adConsent`, and a missing or false value means no.
+
+     Defaulting a missing field to "no" is deliberate. An older cached
+     shop.js that does not send the field yet will under-report for as long
+     as it is cached, which costs some measurement; the other default would
+     silently report customers who refused, which costs the promise the
+     cookie bar makes. The order itself is unaffected either way. */
+  if (body.adConsent === true) {
+    const requestUrl = request.url || '';
+    context.waitUntil(
+      sendMetaPurchaseEvent(env, {
+        ...order,
+        total,
+        value: total,
+        subtotal,
+        shipping
+      }, requestUrl).then((result) => {
+        if (!result || result.ok !== true) {
+          console.info('meta purchase skipped or failed', result);
+        }
+      })
+    );
+  }
 
   return json({ ok: true, order: publicOrder(order) }, 201);
 });

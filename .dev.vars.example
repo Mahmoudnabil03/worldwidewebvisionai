@@ -39,16 +39,63 @@ SESSION_SECRET=""
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# WhatsApp order notifications - ALL OPTIONAL.
+# Administrators — OPTIONAL.
+#
+# An admin account is a staff account that can additionally read EVERY
+# employee's attendance (the Team tab on /account, and /api/attendance/team).
+# It grants nothing else.
+#
+# Two ways to be one: role='admin' on the users row, or the address listed
+# here. The default, with this unset, is the single address
+# admin@visionguardeg.com. Comma-separated for more than one.
+#
+# Addresses on this list CANNOT be registered through the public signup form —
+# an admin account is created out of band:
+#
+#   bash/zsh:    SESSION_SECRET="secret" npm run admin:create -- --password "..."
+#   PowerShell:  $env:SESSION_SECRET = "secret"
+#                npm run admin:create -- --password "..."
+#
+# It must be the deployment's own SESSION_SECRET: passwords are peppered with
+# it, so a hash built with a different one can never be signed into.
+# ADMIN_EMAILS="admin@visionguardeg.com"
+
+# ---------------------------------------------------------------------------
+# Order notifications - ALL OPTIONAL.
 #
 # With none of this set, orders are still saved and the customer still gets a
 # one-tap "send this order on WhatsApp" link on the confirmation screen. These
 # variables only add the automatic push to your phone.
 #
-# Pick ONE provider. See lib/whatsapp.js for the trade-offs.
+# Pick ONE provider. Telegram is the recommended one and wins automatically
+# when TELEGRAM_BOT_TOKEN is set. See lib/whatsapp.js for the trade-offs.
 # ---------------------------------------------------------------------------
 
-# Where the notification goes. Defaults to the number published on the site.
+# -- Option 0 (recommended): Telegram bot ------------------------------------
+# Free, official, no template approval and no 24-hour sending window: the full
+# multi-line Arabic summary arrives exactly as composed.
+#
+#   1. Message @BotFather on Telegram, /newbot, copy the token it gives you.
+#   2. Open your new bot and send it any message (a bot cannot message you
+#      first). For a group, add the bot to the group instead.
+#   3. Find the chat id:
+#        curl "https://api.telegram.org/bot<TOKEN>/getUpdates"
+#      and read result[].message.chat.id — your own user id for a direct
+#      message, or a negative id like -1001234567890 for a group.
+#
+# The token is a secret: anyone holding it controls the bot. Store it as an
+# encrypted secret, never in wrangler.toml or a committed file, and /revoke it
+# in @BotFather if it is ever pasted somewhere it should not have been.
+# TELEGRAM_BOT_TOKEN=""        # e.g. 8961198092:AA...
+# TELEGRAM_CHAT_ID=""          # e.g. 123456789 or -1001234567890
+#
+# Leaving TELEGRAM_CHAT_ID empty still works: the code falls back to reading
+# the most recent chat from getUpdates. That only sees the last 24 hours and
+# returns nothing once a webhook is set on the bot, so set it once you know it.
+
+# --- WhatsApp options -------------------------------------------------------
+# Where the WhatsApp notification goes (ignored by Telegram, which uses
+# TELEGRAM_CHAT_ID). Defaults to the number published on the site.
 WHATSAPP_TO="201105006854"
 
 # -- Option 1: Meta WhatsApp Cloud API (official, free tier) -----------------
@@ -82,4 +129,5 @@ WHATSAPP_TO="201105006854"
 # META_ATTRIBUTION_SHARE="0.3"  # optional attribution share for the event
 
 # Force a provider instead of auto-detecting from whichever keys are present.
-# WHATSAPP_PROVIDER="meta"
+# One of: telegram, meta, ultramsg, twilio, callmebot.
+# NOTIFY_PROVIDER="telegram"

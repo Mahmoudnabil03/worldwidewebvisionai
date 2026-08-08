@@ -21,7 +21,14 @@ CREATE TABLE IF NOT EXISTS users (
                                                -- or the GOOGLE_ONLY_PW sentinel for an
                                                -- account that only signs in with Google
   google_sub    TEXT,                          -- Google's stable account id; NULL until linked
-  role          TEXT NOT NULL DEFAULT 'customer',  -- 'customer' | 'staff'
+  firebase_uid  TEXT,                          -- Firebase Auth uid — the credential authority.
+                                               -- Stable for the life of the account; an email
+                                               -- address is not, so this is the join key.
+  role          TEXT NOT NULL DEFAULT 'customer',  -- 'customer' | 'staff' | 'admin'
+                                               -- 'admin' additionally reads every
+                                               -- employee's attendance. Created only by
+                                               -- scripts/create-admin.mjs; the signup form
+                                               -- refuses the administrator addresses.
   marketing     INTEGER NOT NULL DEFAULT 0,
   newsletter    INTEGER NOT NULL DEFAULT 0,
   terms_at      TEXT,                          -- when the required consent was given
@@ -32,6 +39,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- One Google identity, one account. NULLs do not collide in SQLite, so every
 -- password-only account is unaffected.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google ON users (google_sub);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_firebase ON users (firebase_uid);
 
 CREATE TABLE IF NOT EXISTS orders (
   id           TEXT PRIMARY KEY,               -- human order number, e.g. VG-260731-K3QX
@@ -87,6 +95,28 @@ CREATE TABLE IF NOT EXISTS newsletter (
   created_at TEXT NOT NULL,
   unsub_at   TEXT
 );
+
+-- Event telemetry, used to power the admin performance panel. The event
+-- relay already sends the payload to Meta; this table keeps the same event
+-- record locally so admins can see network traffic, visitor counts and the
+-- event mix without inventing a second tracking system.
+CREATE TABLE IF NOT EXISTS meta_events (
+  id           TEXT PRIMARY KEY,
+  event        TEXT NOT NULL,
+  event_id     TEXT,
+  source_url   TEXT,
+  value        INTEGER,
+  currency     TEXT,
+  user_id      TEXT,
+  external_id  TEXT,
+  email        TEXT,
+  phone        TEXT,
+  client_ip    TEXT,
+  user_agent   TEXT,
+  created_at   TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_meta_events_created ON meta_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_meta_events_event ON meta_events (event, created_at DESC);
 
 -- Fixed-window counters for login/signup/order abuse. Rows are self-expiring:
 -- an entry whose reset_at has passed is reset in place on next use.

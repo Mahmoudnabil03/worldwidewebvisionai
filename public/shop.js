@@ -7,12 +7,34 @@
    at checkout, so what the customer sees and what the order costs cannot
    drift — and a hand-edited localStorage cart buys nothing cheaply.
    ========================================================================= */
-import { PRODUCTS, CATEGORIES, GOVERNORATES, findProduct, imageFor } from './catalog.js';
+import {
+  PRODUCTS as STATIC_PRODUCTS, CATEGORIES, GOVERNORATES,
+  findProduct as staticFind, imageFor
+} from './catalog.js?v=31';
+
+/* The catalogue the page renders and prices FROM DISPLAY only.
+
+   It starts as the static file so the grid can paint immediately even if
+   the network is slow, then is replaced by /api/catalog — which reads the
+   products table — so an admin's edit shows up on the next page load rather
+   than the next deploy.
+
+   None of this decides what an order costs. functions/api/orders.js prices
+   every line server-side from the same table; the cart still travels as
+   {id, qty} and nothing else. If this list were stale, or edited in the
+   browser, the checkout would simply disagree with it — which is the point. */
+let PRODUCTS = STATIC_PRODUCTS;
+let BY_ID = null;
+
+function findProduct(id) {
+  if (!BY_ID) return staticFind(id);
+  return BY_ID.get(String(id)) || null;
+}
 /* LANG is a live binding: site.js reassigns it on a language switch and this
    module sees the new value without re-importing. */
 import {
   $, $$, initChrome, onLang, LANG, t, money, currency, esc, api, toast
-} from './site.js';
+} from './site.js?v=31';
 
 initChrome();
 
@@ -45,6 +67,18 @@ function save() {
 function qtyOf(id) {
   const line = cart.find((l) => l.id === id);
   return line ? line.qty : 0;
+}
+
+/* The cart in the shape the pixel wants, derived from cartLines() below
+   rather than rebuilt — one definition of what is in the cart.
+
+   These prices are for measurement only. What an order actually costs is
+   recomputed on the server from the catalogue and never taken from the
+   browser; see lib/orders.js. */
+function pixelLines() {
+  return cartLines()
+    .filter((l) => l.product)
+    .map((l) => ({ id: l.product.id, qty: l.qty, unit: l.product.price, name: l.product.name }));
 }
 
 function setQty(id, qty) {
@@ -89,6 +123,7 @@ const T = {
   checkout:     { ar: 'إتمام الطلب', en: 'Checkout' },
   results:      { ar: 'منتج', en: 'products' },
   resultsOne:   { ar: 'منتج واحد', en: '1 product' },
+  details:      { ar: 'عرض التفاصيل', en: 'View details' },
   placing:      { ar: 'جاري إرسال الطلب…', en: 'Sending your order…' },
   place:        { ar: 'أكّد الطلب', en: 'Place the order' },
   added:        { ar: 'اتضاف للسلة', en: 'Added to cart' },
@@ -172,6 +207,7 @@ function renderGrid() {
           </p>
           <div class="pcard__buy">${qty ? stepper(p.id, qty) : addButton(p.id)}</div>
         </div>
+        <a class="link pcard__link" href="product.html?id=${esc(p.id)}">${esc(t(T.details))}</a>
       </div>
     </article>`;
   }).join('');
@@ -215,26 +251,80 @@ chipsWrap.addEventListener('click', (e) => {
   history.replaceState(null, '', url);
   renderChips();
   renderGrid();
+  trackCategory();
 });
+
+/* ViewContent.
+
+   This shop has no per-product page, so there is no "product viewed" moment
+   to report — and firing one per card as it scrolls past would bury the real
+   signal under dozens of events per visit. A category listing is the page
+   here that corresponds to intent, so that is what ViewContent describes,
+   with content_type 'product_group' rather than 'product' so the shape does
+   not claim to be something it is not. Once per category per page load. */
+function trackCategory() {
+  if (!window.vgTrack) return;
+  const shown = PRODUCTS.filter((p) => activeCat === 'all' || p.cat === activeCat);
+  window.vgTrack.viewCategory(activeCat, shown.map((p) => ({ id: p.id })));
+}
+
+/* Including the one the page opened on — arriving from a category card on
+   the landing page is exactly the case worth measuring. */
+trackCategory();
+
+/* One unit added is one AddToCart, whether it came from the add button or
+   from the + stepper. Removing one is not an event — Meta has no
+   RemoveFromCart standard event, and inventing one as a custom event would
+   put a number in Ads Manager that no report knows what to do with. */
+function trackAdd(id, qty) {
+  if (!window.vgTrack) return;
+  const p = findProduct(id);
+  if (!p) return;
+  window.vgTrack.addToCart({ id: p.id, qty: qty || 1, unit: p.price, name: p.name });
+}
 
 grid.addEventListener('click', (e) => {
   const add = e.target.closest('[data-add]');
   if (add) {
     setQty(add.getAttribute('data-add'), 1);
+    trackAdd(add.getAttribute('data-add'), 1);
     toast(t(T.added), 'good');
     return;
   }
   const inc = e.target.closest('[data-inc]');
-  if (inc) return setQty(inc.getAttribute('data-inc'), qtyOf(inc.getAttribute('data-inc')) + 1);
+  if (inc) {
+    setQty(inc.getAttribute('data-inc'), qtyOf(inc.getAttribute('data-inc')) + 1);
+    trackAdd(inc.getAttribute('data-inc'), 1);
+    return;
+  }
   const dec = e.target.closest('[data-dec]');
   if (dec) return setQty(dec.getAttribute('data-dec'), qtyOf(dec.getAttribute('data-dec')) - 1);
+
+  const card = e.target.closest('.pcard');
+  if (!card) return;
+  if (e.target.closest('.pcard__buy, .pcard__link')) return;
+
+  const id = card.getAttribute('data-id');
+  if (id) location.href = `product.html?id=${encodeURIComponent(id)}`;
 });
 
 let searchTimer;
+let lastTrackedQuery = '';
 $('#q').addEventListener('input', (e) => {
   const value = e.target.value;
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => { query = value; renderGrid(); }, 140);
+  searchTimer = setTimeout(() => {
+    query = value;
+    renderGrid();
+    /* Not per keystroke: the same debounce that redraws the grid, plus a
+       floor of three characters and a check that the term actually changed.
+       Otherwise "كاميرا" is seven Search events for one search. */
+    const term = value.trim();
+    if (term.length >= 3 && term !== lastTrackedQuery && window.vgTrack) {
+      lastTrackedQuery = term;
+      window.vgTrack.search(term);
+    }
+  }, 140);
 });
 
 $('#sort').addEventListener('change', (e) => { sort = e.target.value; renderGrid(); });
@@ -303,10 +393,12 @@ function publishBarHeight(on) {
 
 function renderCheckoutBar() {
   const count = cartCount();
-  /* Not on the checkout or confirmation views: there it is either the thing
-     you are already doing or an order that is already placed. Not over the
-     open drawer either — the drawer has its own checkout button. */
-  const on = count > 0 && currentView === 'shop' && !cartEl.classList.contains('is-on');
+  /* Keep the checkout bar visible as long as the customer still has items in
+     the cart, even if they have moved into the checkout step. It disappears
+     only once the cart is empty or the final confirmation view is reached.
+     It also stays off while the cart drawer itself is open, because the drawer
+     already exposes its own checkout entry point. */
+  const on = count > 0 && currentView !== 'done' && !cartEl.classList.contains('is-on');
 
   cobarCount.textContent = count === 1 ? t(T.barOne) : `${count} ${t(T.barMany)}`;
   cobarTotal.textContent = `${money(subtotal())} ${currency()}`;
@@ -396,12 +488,29 @@ function showView(name) {
   window.scrollTo(0, 0);
   if (name === 'checkout') {
     renderSummary();
+    /* InitiateCheckout belongs here rather than on the two buttons that lead
+       here — the cart drawer's and the sticky bar's — because this is the
+       one place both of them end up, and a third entry point added later
+       gets it for free. Fired on every entry, not once: going back to the
+       shop and returning is a real second attempt at checking out, and
+       suppressing it would hide the drop-off this event exists to show. */
+    if (window.vgTrack) window.vgTrack.initiateCheckout(pixelLines());
     const first = $('#oName');
     if (first && !first.value) first.focus();
   }
 }
 
 $('#backToShop').addEventListener('click', () => showView('shop'));
+
+/* AddPaymentInfo. No card details are ever entered on this site — it is cash
+   on delivery or a bank transfer — so what this reports is the customer
+   committing to how they will pay, which is the same step in the funnel and
+   the closest honest match among Meta's standard events. Once per method. */
+$$('input[name="payment"]').forEach((radio) => {
+  radio.addEventListener('change', () => {
+    if (radio.checked && window.vgTrack) window.vgTrack.addPaymentInfo(radio.value, pixelLines());
+  });
+});
 
 /* =========================================================================
    6. CHECKOUT
@@ -514,6 +623,18 @@ orderForm.addEventListener('submit', async (e) => {
         newsletter: $('#oNews').checked,
         marketing: $('#oNews').checked,
         lang: LANG,
+        /* The advertising-measurement answer from the cookie bar, which is a
+           different thing from the newsletter box above it: one is about
+           emails we send, this is about whether the order may be reported to
+           Meta at all.
+
+           It has to travel with the order because the server relays Purchase
+           to the Conversions API on its own, in functions/api/orders.js —
+           that path does not go through the browser, so nothing the browser
+           blocks can stop it. Without this field a visitor who pressed
+           Reject would still have their order sent, which would make the
+           Reject button a lie. */
+        adConsent: !!(window.vgConsent && window.vgConsent.marketing()),
         cart: cart.map((l) => ({ id: l.id, qty: l.qty }))
       }
     });
@@ -525,17 +646,27 @@ orderForm.addEventListener('submit', async (e) => {
 
     $('#doneNum').textContent = data.order.id;
     $('#doneNote').textContent = t(T.doneNote);
-    try {
-      if (window.fbq) {
-        window.fbq('track', 'Purchase', {
-          content_name: 'Vision Guard Order',
-          currency: 'EGP',
-          value: Number(data.order.total || 0)
-        });
-      }
-    } catch (e) {
-      console.info('fbq purchase event skipped', e);
+
+    /* Purchase, browser side. The order number is passed as the event id and
+       functions/api/orders.js sends the same one to the Conversions API, so
+       Meta collapses the two copies into a single conversion. Without that
+       every order was reported twice, at twice the revenue. See track.js.
+
+       Read off data.order, not the local cart: the cart has already been
+       emptied above, and the server's copy is the priced, authoritative one. */
+    if (window.vgTrack) {
+      /* Guest checkout is most of this shop's orders, so this is where the
+         majority of identifiable events come from. Identify BEFORE the
+         Purchase fires, so the purchase itself carries the matching rather
+         than only whatever comes after it. */
+      window.vgTrack.identify({ email: $('#oEmail').value, phone: $('#oPhone').value });
+      const lines = (data.order.items || []).map((i) => ({ id: i.id, qty: i.qty, unit: i.unit, name: i.name }));
+      window.vgTrack.purchase(data.order.id, lines, data.order.total);
+      /* A ticked newsletter box at checkout is a mailing-list opt-in, which
+         is the thing Meta calls a Lead. */
+      if ($('#oNews').checked) window.vgTrack.lead('checkout');
     }
+
     showView('done');
   } catch (err) {
     showError(err);
@@ -560,8 +691,50 @@ onLang(() => {
 
 renderChips();
 renderGrid();
+
+/* Live prices. Deliberately after the first paint: a slow or failed fetch
+   must never leave a customer looking at an empty shop, so the static list
+   is what they see until the real one arrives, and the grid is redrawn once
+   it does. A failure here is logged and otherwise ignored — the static
+   prices are the ones the site shipped with, not nonsense. */
+(async function liveCatalog() {
+  try {
+    const res = await fetch('/api/catalog', { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.products) || !data.products.length) return;
+
+    PRODUCTS = data.products;
+    BY_ID = new Map(PRODUCTS.map(function (p) { return [p.id, p]; }));
+
+    /* Anything already in the cart that no longer exists is dropped, and
+       quantities are kept. A cart holding a withdrawn product would fail at
+       checkout with "no longer available"; better to clear it here, while
+       the customer can still see what changed. */
+    const before = cart.length;
+    cart = cart.filter(function (l) { return findProduct(l.id); });
+    if (cart.length !== before) save();
+
+    renderChips();
+    renderGrid();
+    renderCart();
+  } catch (e) {
+    console.info('live catalogue unavailable, using the built-in prices', e && e.message);
+  }
+})();
 renderCart();
 renderGovernorates();
+
+/* #checkout on arrival.
+
+   The coverage planner (game.html) builds a whole system — cameras, recorder,
+   drive, power, cable — writes it into this same cart, and sends the customer
+   straight here. Without this they landed on the product grid with a full
+   cart and no indication that anything had happened.
+
+   Guarded on the cart being non-empty, so a stale bookmarked #checkout on an
+   empty cart still shows the shop rather than an empty checkout form. */
+if (location.hash === '#checkout' && cart.length) showView('checkout');
 
 /* A cart edited in a second tab should not be silently overwritten by this
    one the next time something is added. */

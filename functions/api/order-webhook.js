@@ -22,7 +22,7 @@
  * It also still accepts an order payload on POST — from an external system
  * that wants to trigger the same alert — but that is a secondary use.
  */
-import { notifyWhatsApp } from '../../lib/whatsapp.js';
+import { notifyWhatsApp, pickProvider } from '../../lib/whatsapp.js';
 
 /* Constant-time compare: the verify token is a shared secret on a public
    endpoint. */
@@ -81,6 +81,14 @@ export async function onRequest(context) {
       };
       return Response.json({
         note: 'presence and shape only — no values are ever returned',
+        provider: pickProvider(env),
+        telegram: {
+          TELEGRAM_BOT_TOKEN: shape(env.TELEGRAM_BOT_TOKEN || env.TELEGRAM_TOKEN),
+          TELEGRAM_CHAT_ID: shape(env.TELEGRAM_CHAT_ID || env.TELEGRAM_TO),
+          effect: (env.TELEGRAM_CHAT_ID || env.TELEGRAM_TO || '').trim()
+            ? 'alerts go to the configured chat'
+            : 'NO CHAT ID: falls back to getUpdates, which is empty unless the bot was messaged in the last 24h'
+        },
         sending: {
           WHATSAPP_TOKEN: shape(env.WHATSAPP_TOKEN || env.WHATSAPP_ACCESS_TOKEN),
           WHATSAPP_PHONE_ID: shape(env.WHATSAPP_PHONE_ID || env.WHATSAPP_PHONE_NUMBER_ID),

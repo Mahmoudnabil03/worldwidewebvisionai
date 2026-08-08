@@ -1,95 +1,34 @@
 /* POST /api/auth/signup
-   Creates the account, records the consent that was actually given, and signs
-   the person in immediately — nobody should have to type a password twice to
-   place one order. */
-import {
-  json, handle, readJson, requireSameOrigin, ApiError,
-  required, normEmail, normPhoneEg, clientIp
-} from '../../../lib/util.js';
-import { db, enforceRate } from '../../../lib/db.js';
-import {
-  hashPassword, checkPasswordStrength, signSession, sessionCookie,
-  randomId, publicUser, isStaffEmail, secretOf
-} from '../../../lib/auth.js';
 
-export const onRequestPost = handle(async (context) => {
-  const { request, env } = context;
-  requireSameOrigin(request);
-  secretOf(env);                      // fail loudly and early if unconfigured
+   CLOSED. Registration moved to Firebase Auth: the browser creates the
+   credential there and posts the resulting ID token to /api/auth/firebase,
+   which verifies it and creates the D1 record — including the same consent
+   handling this endpoint used to do (terms stamped only when the box was
+   actually ticked, newsletter written through to the mailing list, marketing
+   kept separate, administrator addresses refused).
 
-  const d1 = await db(env);
-  await enforceRate(d1, `signup:${clientIp(request)}`, 8, 3600);
+   It could not be left working. It writes a pw_hash that Firebase knows
+   nothing about, so any account created through it would be one the sign-in
+   form can no longer sign into: an account that exists, can have orders
+   placed against it, and locks its owner out.
 
-  const body = await readJson(request);
+   It answers rather than 404s because a browser holding a cached copy of the
+   old account.js would otherwise fail with nothing to explain it, on the one
+   action a new customer is trying to take.
 
-  const name = required(body.name, 'name', 120);
-  const email = normEmail(body.email);
-  const phone = body.phone ? normPhoneEg(body.phone, 'phone', true) : '';
-  const password = typeof body.password === 'string' ? body.password : '';
-  checkPasswordStrength(password);
+   /api/auth/login is deliberately still live — see the note in that file.
+*/
+import { json, handle, ApiError } from '../../../lib/util.js';
 
-  /* The one non-negotiable box. Marketing and newsletter are separate and
-     genuinely optional — bundling them into the terms checkbox would make the
-     consent worthless. */
-  if (body.terms !== true) {
-    throw new ApiError(
-      400, 'terms_required',
-      'You need to accept the terms of use and the privacy policy to create an account.',
-      { field: 'terms' }
-    );
-  }
-
-  const marketing = body.marketing === true ? 1 : 0;
-  const newsletter = body.newsletter === true ? 1 : 0;
-  const lang = body.lang === 'en' ? 'en' : 'ar';
-
-  const existing = await d1.prepare('SELECT id FROM users WHERE email = ?1').bind(email).first();
-  if (existing) {
-    throw new ApiError(409, 'email_taken', 'An account already exists with that email. Try signing in.', { field: 'email' });
-  }
-
-  const id = randomId(16);
-  const now = new Date().toISOString();
-  const pwHash = await hashPassword(env, password);
-  const role = isStaffEmail(email) ? 'staff' : 'customer';
-
-  try {
-    await d1.prepare(
-      `INSERT INTO users
-         (id, email, name, phone, pw_hash, role, marketing, newsletter, terms_at, lang, created_at, last_login_at)
-       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)`
-    ).bind(id, email, name, phone || null, pwHash, role, marketing, newsletter, now, lang, now).run();
-  } catch (err) {
-    /* UNIQUE(email) can still fire if two signups race. */
-    if (String(err && err.message).includes('UNIQUE')) {
-      throw new ApiError(409, 'email_taken', 'An account already exists with that email. Try signing in.', { field: 'email' });
-    }
-    throw err;
-  }
-
-  if (newsletter) {
-    try {
-      await d1.prepare(
-        `INSERT INTO newsletter (email, name, marketing, source, lang, created_at)
-         VALUES (?1,?2,?3,'signup',?4,?5)
-         ON CONFLICT(email) DO UPDATE SET
-           marketing = MAX(newsletter.marketing, ?3),
-           unsub_at  = NULL`
-      ).bind(email, name, marketing, lang, now).run();
-    } catch (err) {
-      console.error('newsletter at signup', err && err.message);
-    }
-  }
-
-  const token = await signSession(env, id);
-  return json(
-    {
-      ok: true,
-      user: publicUser({
-        id, email, name, phone, role, marketing, newsletter, lang, created_at: now
-      })
-    },
-    201,
-    { 'set-cookie': sessionCookie(request, token) }
+export const onRequestPost = handle(async () => {
+  throw new ApiError(
+    410, 'signup_moved',
+    'Account creation has moved. Please refresh the page and sign up again.'
   );
 });
+
+/* A GET is what someone gets by pasting the URL into a browser while working
+   out why their sign-up failed. Answer it plainly instead of with a 405. */
+export const onRequestGet = handle(async () =>
+  json({ ok: false, code: 'signup_moved', message: 'Sign-up is handled by /api/auth/firebase.' }, 410)
+);

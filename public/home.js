@@ -12,7 +12,7 @@
    page that needs to be a module (catalog.js is one), and because main.js
    owns behaviour while this owns content.
    ========================================================================= */
-import { CATEGORIES, PRODUCTS } from './catalog.js';
+import { CATEGORIES, PRODUCTS } from './catalog.js?v=31';
 
 const cats  = document.querySelector('.cats');
 const plist = document.querySelector('.plist');

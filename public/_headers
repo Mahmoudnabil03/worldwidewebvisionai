@@ -9,29 +9,34 @@
 /*
   # --- security ---
   # Every page carries the SAME one-line inline <script> in <head> (the
-  # no-js -> js class swap). It must run before paint, so it cannot move to an
-  # external file without a flash of hidden content — it is allow-listed by
-  # hash instead. All three pages share one hash because the script is byte
-  # for byte identical; keep it that way. If you edit it anywhere, recompute
-  # and update this value, or the reveal animations silently stop working:
-  #   node -e "const c=require('crypto');console.log('sha256-'+c.createHash('sha256').update(process.argv[1]).digest('base64'))" "<script body>"
-  # Google sign-in needs four of these widened, and no more. accounts.google.com
-  # serves the gsi/client script and its stylesheet, is called for the token
-  # exchange, and renders the button itself inside an iframe (frame-src) — the
-  # button is Google's own, which is both a requirement of theirs and the
-  # reason a look-alike must never be substituted. lh3.googleusercontent.com is
-  # where profile pictures are served from. `frame-ancestors 'none'` is
-  # untouched: other sites still cannot frame us.
-  # style-src-attr is called out separately and deliberately. Google Identity
-  # Services sizes its button with inline style="..." ATTRIBUTES on the nodes
-  # it injects into this page. Without this directive those attributes inherit
-  # style-src, which has no 'unsafe-inline', so they were stripped — the button
-  # lost its height and rendered as a 437px-tall Google logo.
+  # no-js -> js class swap, and the theme choice). It must run before paint, so
+  # it cannot move to an external file without a flash of the wrong theme — it
+  # is allow-listed by hash instead. All EIGHT pages share one hash because the
+  # script is byte for byte identical; keep it that way. If you edit it
+  # anywhere, recompute and update this value, or the reveal animations and the
+  # pre-paint theme silently stop working:
   #
-  # Naming the -attr variant keeps the relaxation to attributes only: style-src
-  # still governs <style> blocks and stylesheet URLs and still has no
-  # 'unsafe-inline', so injected <style> elements remain blocked. That is the
-  # narrowest thing that makes the button work.
+  # terms.html used to have its </script> on the next line, which put a
+  # trailing newline in the script BODY and therefore gave it a different
+  # hash — so that one page had been running with its inline script blocked,
+  # no js class and no theme applied before paint, silently. All eight are now
+  # written identically on one line. That is the failure mode this note warns
+  # about, and it had already happened.
+  #   node -e "const c=require('crypto');console.log('sha256-'+c.createHash('sha256').update(process.argv[1]).digest('base64'))" "<script body>"
+  # accounts.google.com is where the sign-in popup goes and where the token
+  # exchange is called. lh3.googleusercontent.com is where profile pictures
+  # are served from. `frame-ancestors 'none'` is untouched: other sites still
+  # cannot frame us.
+  #
+  # Google Identity Services is NO LONGER USED — the site has one sign-in
+  # stack, Firebase, and the button is our own markup rather than a widget
+  # Google renders (see public/account.js). The style-src-attr relaxation and
+  # the style-src sha256 below both date from that widget: it sized itself
+  # with inline style attributes and injected a <style> block, and without
+  # those two the button rendered as a 437px-tall Google logo. They are kept
+  # because Firebase's own hidden auth iframe styles itself the same way, and
+  # because style-src-attr is narrow by construction — it permits ATTRIBUTES
+  # only, so injected <style> ELEMENTS other than the pinned hash stay blocked.
   # Meta Pixel needs three of these widened. It is worth knowing exactly which,
   # because a missing one fails silently — the pixel simply never fires and
   # nothing in the page says so:
@@ -59,7 +64,44 @@
   # form-action locked to 'self', you can: the server-side Conversions API in
   # functions/api/orders.js already reports Purchase independently of the
   # browser, and Meta deduplicates the two.
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-Kujm0/4azSdOPOSA6aaqqQwa4A5Ur08aglfQkpthXJo=' https://accounts.google.com https://connect.facebook.net; style-src 'self' https://fonts.googleapis.com https://accounts.google.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com https://www.facebook.com; connect-src 'self' https://accounts.google.com https://www.facebook.com https://connect.facebook.net; frame-src https://accounts.google.com https://www.facebook.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.facebook.com; frame-ancestors 'none'; upgrade-insecure-requests
+  # Firebase Auth needs three of these widened, and each one fails in its own
+  # confusing way if you leave it out:
+  #   script-src   www.gstatic.com, which serves the Firebase ES modules.
+  #                public/firebase-auth.js imports them by URL because there
+  #                is no bundler here. Blocked, the import rejects and the
+  #                Google button simply never appears.
+  #   connect-src  identitytoolkit.googleapis.com (sign-in, sign-up, password
+  #                reset) and securetoken.googleapis.com (token refresh).
+  #                Blocked, every credential call fails as a network error and
+  #                looks like the customer's connection.
+  #   frame-src    the project's authDomain. signInWithPopup opens a real
+  #                popup window, which CSP does not govern — but the SDK also
+  #                mounts a hidden iframe at <authDomain>/__/auth/iframe to
+  #                track auth state, and that one is a frame.
+  #   script-src + frame-src apis.google.com. THIS ONE WAS MISSING and it is
+  #                why "Continue with Google" failed at click time. The hidden
+  #                auth iframe above bootstraps itself by loading
+  #                https://apis.google.com/js/api.js — the gapi loader, the
+  #                same library the old auth2 flow used. Blocked, the iframe
+  #                never initialises and the popup handshake has nothing to
+  #                report back to, so the sign-in dies partway with a
+  #                version/compatibility-shaped error rather than a network
+  #                one. Verified in the browser console: three
+  #                "Loading the script 'https://apis.google.com/js/api.js'
+  #                violates ... script-src" entries per sign-in attempt.
+  #                gstatic serves the SDK; apis.google.com serves the loader;
+  #                both are required and neither substitutes for the other.
+  # Note that googleapis.com is NOT widened wholesale: the two subdomains
+  # named are the only ones the auth flow talks to, and the key set this
+  # server verifies tokens against is fetched by the Worker, not the browser.
+  # img-src carries `blob:` for one reason: the catalogue editor in
+  # public/account.js previews a chosen image before it is uploaded, via
+  # URL.createObjectURL(file). Without it that preview is blocked and the
+  # admin picks a file, sees nothing, and has to save to find out what they
+  # chose. A blob: URL can only be minted by this page's own JavaScript and
+  # only points at memory this page already holds, so it grants no reach
+  # anything else on this list does not already have.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-adVl2YTBrrigbtHMrTyF6Y2PuY7OVnFMe+eyESsr1i0=' https://accounts.google.com https://apis.google.com https://connect.facebook.net https://www.gstatic.com; style-src 'self' 'sha256-zCDkH4cegmsyd2gRjIf7/EYDNSYpG9GSUO+/bEavxmc=' https://fonts.googleapis.com https://accounts.google.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://lh3.googleusercontent.com https://www.facebook.com; connect-src 'self' https://accounts.google.com https://www.facebook.com https://connect.facebook.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://visionguard-7425d.firebaseapp.com; frame-src https://accounts.google.com https://apis.google.com https://www.facebook.com https://visionguard-7425d.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self' https://www.facebook.com; frame-ancestors 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
@@ -88,6 +130,42 @@
 /account.html
   Cache-Control: no-store
 
+/game
+  Cache-Control: public, max-age=0, must-revalidate
+
+/game.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/privacy
+  Cache-Control: public, max-age=0, must-revalidate
+
+/privacy.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/terms
+  Cache-Control: public, max-age=0, must-revalidate
+
+/terms.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/refund
+  Cache-Control: public, max-age=0, must-revalidate
+
+/refund.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/shipping
+  Cache-Control: public, max-age=0, must-revalidate
+
+/shipping.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/product
+  Cache-Control: public, max-age=0, must-revalidate
+
+/product.html
+  Cache-Control: public, max-age=0, must-revalidate
+
 # CSS and JS are unhashed filenames, so they cannot be cached immutably.
 # One hour, then revalidate — cheap because 304s are tiny.
 /styles.css
@@ -108,16 +186,40 @@
 /account.js
   Cache-Control: public, max-age=3600, must-revalidate
 
+/page.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
 /assistant.js
   Cache-Control: public, max-age=3600, must-revalidate
 
 /home.js
   Cache-Control: public, max-age=3600, must-revalidate
 
-/google-auth.js
+/firebase-auth.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# consent.js gates pixel.js, so a stale copy of it is a stale consent policy.
+# Same hour as everything else — the ?v= query is what actually forces the
+# update on deploy — but it is worth knowing which file this one is.
+/consent.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# The coverage planner. game-data.js holds the optics, the floor plans and the
+# system-building rules, so it is the one the shop owner is most likely to edit
+# — same hour as the rest, and the ?v= bump is what makes an edit land.
+/game.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/game-data.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/promo.js
   Cache-Control: public, max-age=3600, must-revalidate
 
 /pixel.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/track.js
   Cache-Control: public, max-age=3600, must-revalidate
 
 # The catalogue changes whenever a price does, and a stale copy would show a

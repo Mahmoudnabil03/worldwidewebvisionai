@@ -57,6 +57,12 @@ export function applyLang(lang) {
   }
   try { localStorage.setItem('vg-lang', LANG); } catch (e) {}
   renderers.forEach((fn) => { try { fn(LANG); } catch (e) { console.error(e); } });
+
+  /* For code that cannot import this module — a classic script such as
+     consent.js, which builds its own markup and so has no data-en node to
+     be swapped for it. main.js dispatches the identical event on the landing
+     page, so one listener covers both halves of the site. */
+  document.dispatchEvent(new CustomEvent('langchange', { detail: { lang: LANG } }));
 }
 
 /* Picks the right half of a {ar, en} pair. */
@@ -184,10 +190,26 @@ const ERRORS_AR = {
   bad_qty:         'الكمية لازم تكون رقم صحيح من ١ لـ ٩٩.',
   unauthenticated: 'لازم تسجّل الدخول الأول.',
   not_staff:       'تبويب الحضور لموظفي Vision Guard فقط.',
+  not_admin:       'العرض ده لإدارة Vision Guard فقط.',
+  bad_date:        'التاريخ لازم يكون بالشكل 2026-08-03.',
   already_in:      'إنت مسجّل حضور بالفعل.',
   not_in:          'إنت مش مسجّل حضور دلوقتي.',
   bad_origin:      'الطلب اترفض لأسباب أمنية. حدّث الصفحة وجرّب تاني.',
   network:         'مافيش اتصال بالسيرفر. اتأكد من الإنترنت وجرّب تاني.',
+  /* Firebase Auth. Its own messages are English and name the vendor
+     ("Firebase: Error (auth/invalid-credential)"), which is no use to a
+     customer on an Arabic page — firebase-auth.js maps its codes onto these. */
+  auth_failed:         'تسجيل الدخول ما نجحش. جرّب تاني.',
+  auth_not_enabled:    'خدمة الحسابات لسه مش مفعّلة على السيرفر. فعّل Authentication من Firebase console.',
+  firebase_unavailable:'مش قادرين نحمّل خدمة الدخول. اتأكد من الإنترنت أو جرّب من غير مانع إعلانات.',
+  no_firebase:         'تسجيل الدخول مش متظبط على السيرفر لسه. راجع إعداد FIREBASE_PROJECT_ID.',
+  bad_firebase_token:  'جلسة الدخول مش صالحة. حدّث الصفحة وجرّب تاني.',
+  firebase_expired:    'انتهت صلاحية الدخول. سجّل دخولك تاني.',
+  email_unverified:    'أكّد إيميلك الأول من الرسالة اللي بعتناها لك، وبعدين سجّل الدخول.',
+  account_disabled:    'الحساب ده متوقف. كلّمنا على واتساب.',
+  popup_blocked:       'المتصفح منع نافذة جوجل. اسمح بالنوافذ المنبثقة وجرّب تاني.',
+  provider_disabled:   'طريقة الدخول دي مش مفعّلة. كلّمنا على واتساب.',
+  unauthorized_domain: 'الدومين ده مش مسموح له بالدخول عبر Firebase. راجع Authorized domains.',
   bad_google_token:  'الدخول بجوجل ما نجحش. جرّب تاني.',
   google_expired:    'انتهت صلاحية الدخول بجوجل. اضغط الزرار تاني.',
   google_unverified: 'حساب جوجل ده مافيهوش إيميل مؤكّد، فمش هينفع نستخدمه. سجّل بالإيميل وكلمة السر.',
@@ -214,8 +236,12 @@ export async function api(path, options) {
     headers: {}
   };
   if (opts.body !== undefined) {
-    init.headers['content-type'] = 'application/json';
-    init.body = JSON.stringify(opts.body);
+    if (opts.body instanceof FormData) {
+      init.body = opts.body;
+    } else {
+      init.headers['content-type'] = 'application/json';
+      init.body = JSON.stringify(opts.body);
+    }
   }
 
   let res;
@@ -287,6 +313,73 @@ export function initChrome() {
 
   const year = $('#year');
   if (year) year.textContent = String(new Date().getFullYear());
+
+  initScrollBars();
+}
+
+/* -------------------------------------------------------------------------
+   Visible scroll bars for the wide tables
+
+   .tablewrap in app.css already carries a styled ::-webkit-scrollbar and a
+   pair of edge shadows. That covers desktop and Android, and it is not
+   enough: iOS Safari ignores ::-webkit-scrollbar on overlay scrollbars
+   outright, so on an iPhone the admin tables scrolled with no bar at all and
+   nothing to say the Edit and Hide buttons existed off the edge.
+
+   So this draws one. A plain div track with a thumb whose width is the
+   visible fraction and whose offset is the scroll progress — the same
+   information a native bar carries, in an element every browser renders
+   identically. It is aria-hidden and pointer-events:none: it reports, it is
+   not a control, and the real scrolling is untouched.
+
+   Direction-agnostic by construction. In RTL scrollLeft counts DOWN from 0 to
+   -max, in LTR it counts up from 0 to +max; taking the absolute value gives
+   the same 0..1 progress either way, and `inset-inline-start` puts the thumb
+   at the correct visual edge without knowing which one that is.
+   ------------------------------------------------------------------------- */
+export function initScrollBars() {
+  $$('.tablewrap').forEach((wrap) => {
+    if (wrap.dataset.hscroll) return;      // already wired
+    wrap.dataset.hscroll = '1';
+
+    const bar = document.createElement('div');
+    bar.className = 'hscroll';
+    bar.setAttribute('aria-hidden', 'true');
+    const thumb = document.createElement('i');
+    bar.appendChild(thumb);
+    wrap.insertAdjacentElement('afterend', bar);
+
+    const sync = () => {
+      const max = wrap.scrollWidth - wrap.clientWidth;
+      /* A few pixels of slack: sub-pixel layout rounding can leave a 1px
+         "overflow" on a table that visibly fits, and a bar for that is
+         noise. */
+      if (max <= 4) { bar.hidden = true; return; }
+      bar.hidden = false;
+
+      const track = bar.clientWidth;
+      const w = Math.max(28, Math.round((wrap.clientWidth / wrap.scrollWidth) * track));
+      const progress = Math.min(1, Math.abs(wrap.scrollLeft) / max);
+      thumb.style.width = w + 'px';
+      thumb.style.insetInlineStart = Math.round(progress * (track - w)) + 'px';
+    };
+
+    wrap.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync, { passive: true });
+
+    /* The admin tables are re-rendered from JavaScript — a catalogue refresh,
+       a new search — so the size changes long after this ran. Watching the
+       table itself catches every one of those without each caller having to
+       remember to tell us. */
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(sync);
+      ro.observe(wrap);
+      const inner = wrap.firstElementChild;
+      if (inner) ro.observe(inner);
+    }
+
+    sync();
+  });
 }
 
 /* -------------------------------------------------------------------------

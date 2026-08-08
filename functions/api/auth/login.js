@@ -1,4 +1,20 @@
-/* POST /api/auth/login */
+/* POST /api/auth/login
+
+   BREAK-GLASS ONLY, and deliberately still live.
+
+   Firebase Auth owns customer credentials now (/api/auth/firebase). This
+   endpoint checks a pw_hash stored in D1, and after the move exactly one
+   account has one: the administrator seeded by scripts/create-admin.mjs.
+   Firebase cannot seed that account without a service-account key, so if
+   this were removed there would be a window — between deploying and creating
+   the admin by hand in the Firebase console — with no way into the timesheet
+   at all. It is also the way back in if Firebase is unreachable.
+
+   It is not a weakening: the hash is the same peppered PBKDF2 it always was,
+   the rate limit is unchanged, and an account with no pw_hash (every account
+   Firebase creates carries the GOOGLE_ONLY_PW sentinel) can never verify
+   against it. See the GOOGLE_ONLY_PW note in lib/auth.js.
+*/
 import {
   json, handle, readJson, requireSameOrigin, ApiError, normEmail, clientIp
 } from '../../../lib/util.js';
@@ -39,7 +55,7 @@ export const onRequestPost = handle(async (context) => {
 
   const token = await signSession(env, row.id);
   return json(
-    { ok: true, user: publicUser(row) },
+    { ok: true, user: publicUser(row, env) },
     200,
     { 'set-cookie': sessionCookie(request, token) }
   );
